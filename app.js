@@ -2456,12 +2456,12 @@ function triggerPrint() {
 // ==========================================================================
 
 const STORAGE_KEY = "CHENAB_EXAM_REPOSITORY";
-const DEFAULT_CLOUD_DB_URL = "https://chenab-college-shorkot-default-rtdb.firebaseio.com/chenab_exam_repository.json";
+const DEFAULT_CLOUD_DB_URL = "https://chenab-exams-default-rtdb.firebaseio.com/chenab_exam_repository.json";
 const CLOUD_DB_KEY = "chenab_cloud_db_url";
 
 function getCloudDbUrl() {
   let url = localStorage.getItem(CLOUD_DB_KEY) || DEFAULT_CLOUD_DB_URL;
-  if (!url || !url.trim()) url = DEFAULT_CLOUD_DB_URL;
+  if (!url || !url.trim() || url.includes("chenab-college-shorkot-default-rtdb")) url = DEFAULT_CLOUD_DB_URL;
   url = url.trim();
   if (!url.endsWith(".json")) {
     url = url.replace(/\/+$/, "") + "/chenab_exam_repository.json";
