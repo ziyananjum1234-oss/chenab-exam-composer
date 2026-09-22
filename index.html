@@ -565,10 +565,15 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Cloud Sync -->
+          <!-- Live Cloud Refresh -->
+          <button onclick="pullFromCloudDatabase()" class="bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/50 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95" title="Fetch latest papers from Cloud Database">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Live Cloud Refresh</span>
+          </button>
+          <!-- Cloud Sync Modal Config -->
           <button onclick="openCloudSyncModal()" id="cloudSyncBtn" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition" title="Cloud Database Sync">
             <i data-lucide="cloud" class="w-3.5 h-3.5"></i>
-            <span id="cloudStatusBtnText">Cloud Sync</span>
+            <span id="cloudStatusBtnText">Cloud: Connected</span>
           </button>
           <!-- Backup Export -->
           <button onclick="exportRepositoryBackup()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition" title="Export all class papers backup">

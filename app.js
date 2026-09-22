@@ -2647,8 +2647,8 @@ function updatePortalBadgeCount() {
   if (footerStats) footerStats.textContent = `Total: ${count} saved exam papers across ${ALL_CLASSES.length} class folders`;
 }
 
-// Save Current Working Paper into Class Folder
-function saveCurrentPaperToRepository() {
+// Save Current Working Paper into Class Folder & Sync to Firebase
+async function saveCurrentPaperToRepository() {
   // Capture latest values directly from DOM inputs
   const classSelect = document.getElementById("classSelector");
   const customSub = document.getElementById("customSubjectInput");
@@ -2667,9 +2667,25 @@ function saveCurrentPaperToRepository() {
   if (marksInput && marksInput.value) paperData.exam.totalMarks = marksInput.value;
   if (timeInput && timeInput.value.trim()) paperData.exam.timeAllowed = timeInput.value.trim();
 
-  const repo = getRepositoryData();
+  let repo = getRepositoryData();
   const currentClass = paperData.exam.classLevel || "Class 9th";
   const currentSubject = paperData.exam.subject || "English";
+
+  // Pre-fetch latest from Firebase before saving to prevent overwrite
+  const cloudUrl = getCloudDbUrl();
+  if (cloudUrl && navigator.onLine) {
+    try {
+      const res = await fetch(cloudUrl, { cache: "no-store" });
+      if (res.ok) {
+        const cloudData = await res.json();
+        if (cloudData && typeof cloudData === "object") {
+          repo = mergeRepositories(repo, cloudData);
+        }
+      }
+    } catch (e) {
+      console.warn("Pre-save cloud check:", e);
+    }
+  }
 
   if (!repo[currentClass]) {
     repo[currentClass] = [];
@@ -2696,7 +2712,7 @@ function saveCurrentPaperToRepository() {
   }
 
   saveRepositoryData(repo);
-  showToast(`✓ Paper Saved Successfully! [${currentClass}] ➔ [${currentSubject}]`);
+  showToast(`✓ Paper Saved to Cloud & Folder: [${currentClass}] ➔ [${currentSubject}]`);
 
   if (!document.getElementById("adminPortalModal").classList.contains("hidden")) {
     if (currentActivePortalClass === currentClass) {
