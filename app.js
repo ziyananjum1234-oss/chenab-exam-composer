@@ -2491,13 +2491,13 @@ function initRepository() {
     ALL_CLASSES.forEach(cls => {
       repo[cls] = [];
     });
-    saveRepositoryData(repo);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
   }
 
-  // Automatic Cloud Sync on Startup from Chenab College Firebase
+  // Automatic Cloud Sync on Startup from Chenab College Firebase (No Cache)
   const cloudUrl = getCloudDbUrl();
   if (cloudUrl && navigator.onLine) {
-    fetch(cloudUrl)
+    fetch(cloudUrl, { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
         if (data && typeof data === "object" && Object.keys(data).length > 0) {
@@ -2712,7 +2712,7 @@ const ADMIN_PASSWORD = "Admin@123";
 let isAdminAuthenticated = false;
 let pendingTargetClass = null;
 
-// Open Admin Portal (Checks Password First)
+// Open Admin Portal (Checks Password First & Fetches Live Cloud Papers)
 function openAdminPortalModal(targetClass = null) {
   pendingTargetClass = targetClass;
 
@@ -2730,10 +2730,31 @@ function openAdminPortalModal(targetClass = null) {
 
   const modal = document.getElementById("adminPortalModal");
   if (modal) modal.classList.remove("hidden");
+  
+  // Render immediately with local data
   if (targetClass) {
     renderClassFolderView(targetClass);
   } else {
     renderPortalRootFolders();
+  }
+
+  // Real-time live fetch from Firebase Cloud so Mobile gets latest papers instantly
+  const cloudUrl = getCloudDbUrl();
+  if (cloudUrl && navigator.onLine) {
+    fetch(cloudUrl, { cache: "no-store" })
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data === "object" && Object.keys(data).length > 0) {
+          const currentLocal = getRepositoryData();
+          const merged = mergeRepositories(currentLocal, data);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          updatePortalBadgeCount();
+          updateCloudBtnStatus(true);
+          if (currentActivePortalClass) renderClassFolderView(currentActivePortalClass);
+          else renderPortalRootFolders();
+        }
+      })
+      .catch(e => console.warn("Portal live cloud pull:", e));
   }
 }
 
