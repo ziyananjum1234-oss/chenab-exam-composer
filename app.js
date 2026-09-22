@@ -2456,14 +2456,14 @@ function triggerPrint() {
 // ==========================================================================
 
 const STORAGE_KEY = "CHENAB_EXAM_REPOSITORY";
-const DEFAULT_CLOUD_DB_URL = "https://chenab-exams-default-rtdb.firebaseio.com/chenab_exam_repository.json";
+const DEFAULT_CLOUD_DB_URL = "https://script.google.com/macros/s/AKfycbxq8U2LlaSjYwWnlOvALkGHHEkQN127VmcAAvBtL1V63L6t0cCN466Xg_0FoXtrdq2jig/exec";
 const CLOUD_DB_KEY = "chenab_cloud_db_url";
 
 function getCloudDbUrl() {
   let url = localStorage.getItem(CLOUD_DB_KEY) || DEFAULT_CLOUD_DB_URL;
   if (!url || !url.trim() || url.includes("chenab-college-shorkot-default-rtdb")) url = DEFAULT_CLOUD_DB_URL;
   url = url.trim();
-  if (!url.endsWith(".json")) {
+  if (url.includes("firebaseio.com") && !url.endsWith(".json")) {
     url = url.replace(/\/+$/, "") + "/chenab_exam_repository.json";
   }
   return url;
@@ -2501,7 +2501,7 @@ function initRepository() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
   }
 
-  // Automatic Cloud Sync on Startup from Chenab College Firebase (No Cache)
+  // Automatic Cloud Sync on Startup from Google Sheets / Cloud DB (No Cache)
   const cloudUrl = getCloudDbUrl();
   if (cloudUrl && navigator.onLine) {
     fetch(cloudUrl, { cache: "no-store" })
@@ -2537,15 +2537,17 @@ function saveRepositoryData(data) {
     // Auto sync to cloud in background if URL configured
     const cloudUrl = getCloudDbUrl();
     if (cloudUrl && navigator.onLine) {
-      fetch(cloudUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      })
-      .then(res => {
-        if (res.ok) updateCloudBtnStatus(true);
-      })
-      .catch(e => console.warn("Background cloud sync offline:", e));
+      if (cloudUrl.includes("firebaseio.com")) {
+        fetch(cloudUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        })
+        .then(res => {
+          if (res.ok) updateCloudBtnStatus(true);
+        })
+        .catch(e => console.warn("Background cloud sync offline:", e));
+      }
     }
   } catch (e) {
     console.error("Failed to save exam repository:", e);
@@ -2569,10 +2571,10 @@ async function pushToCloudDatabase() {
   const input = document.getElementById("cloudDbUrlInput");
   let url = (input ? input.value : "").trim();
   if (!url) {
-    showToast("Please enter a Cloud Database URL (e.g. Firebase URL).");
+    showToast("Please enter a Cloud Database URL (e.g. Google Apps Script Web App URL or Firebase URL).");
     return;
   }
-  if (!url.endsWith(".json")) {
+  if (url.includes("firebaseio.com") && !url.endsWith(".json")) {
     url = url.replace(/\/+$/, "") + "/chenab_exam_repository.json";
   }
 
@@ -2581,17 +2583,34 @@ async function pushToCloudDatabase() {
 
   try {
     showToast("☁️ Syncing papers to Cloud Database...");
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(repo)
-    });
-    if (res.ok) {
+    if (url.includes("script.google.com")) {
+      // Push each class paper to Google Sheet
+      const classes = Object.keys(repo);
+      for (const cls of classes) {
+        const papers = repo[cls] || [];
+        for (const p of papers) {
+          await fetch(url, {
+            method: "POST",
+            body: JSON.stringify({ className: cls, paper: p })
+          });
+        }
+      }
       updateCloudBtnStatus(true);
       closeCloudSyncModal();
-      showToast("✓ All Exam Papers successfully backed up to Cloud Database!");
+      showToast("✓ All Exam Papers successfully backed up to Google Sheets Cloud!");
     } else {
-      showToast("Cloud Error: " + res.statusText);
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(repo)
+      });
+      if (res.ok) {
+        updateCloudBtnStatus(true);
+        closeCloudSyncModal();
+        showToast("✓ All Exam Papers successfully backed up to Cloud Database!");
+      } else {
+        showToast("Cloud Error: " + res.statusText);
+      }
     }
   } catch (err) {
     console.error("Cloud push failed:", err);
@@ -2632,7 +2651,7 @@ function updateCloudBtnStatus(isConnected) {
   const btn = document.getElementById("cloudSyncBtn");
   if (btnText && btn) {
     if (isConnected) {
-      btnText.textContent = "Cloud: Connected";
+      btnText.textContent = "Cloud: Connected (Google Sheets)";
       btn.className = "bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition";
     }
   }
@@ -2650,7 +2669,7 @@ function updatePortalBadgeCount() {
   if (footerStats) footerStats.textContent = `Total: ${count} saved exam papers across ${ALL_CLASSES.length} class folders`;
 }
 
-// Save Current Working Paper into Class Folder & Directly Push to Firebase Cloud
+// Save Current Working Paper into Class Folder & Directly Push to Cloud
 async function saveCurrentPaperToRepository() {
   // Capture latest values directly from DOM inputs
   const classSelect = document.getElementById("classSelector");
@@ -2702,34 +2721,48 @@ async function saveCurrentPaperToRepository() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
   updatePortalBadgeCount();
 
-  // Push to Firebase Cloud
+  // Push to Cloud (Google Sheets or Firebase)
   const cloudUrl = getCloudDbUrl();
   let cloudSaved = false;
 
   if (cloudUrl && navigator.onLine) {
     try {
-      // First merge latest from cloud
-      const getRes = await fetch(cloudUrl, { cache: "no-store" });
-      if (getRes.ok) {
-        const cloudData = await getRes.json();
-        if (cloudData && typeof cloudData === "object") {
-          repo = mergeRepositories(repo, cloudData);
-          const cIdx = repo[currentClass].findIndex(p => p.id === record.id);
-          if (cIdx >= 0) repo[currentClass][cIdx] = record;
-          else repo[currentClass].push(record);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
+      if (cloudUrl.includes("script.google.com")) {
+        // Direct POST to Google Sheets Web App
+        const res = await fetch(cloudUrl, {
+          method: "POST",
+          body: JSON.stringify({
+            className: currentClass,
+            paper: record
+          })
+        });
+        if (res.ok) {
+          cloudSaved = true;
+          updateCloudBtnStatus(true);
         }
-      }
+      } else {
+        // Firebase Cloud Sync
+        const getRes = await fetch(cloudUrl, { cache: "no-store" });
+        if (getRes.ok) {
+          const cloudData = await getRes.json();
+          if (cloudData && typeof cloudData === "object") {
+            repo = mergeRepositories(repo, cloudData);
+            const cIdx = repo[currentClass].findIndex(p => p.id === record.id);
+            if (cIdx >= 0) repo[currentClass][cIdx] = record;
+            else repo[currentClass].push(record);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
+          }
+        }
 
-      // Send PUT to Cloud
-      const putRes = await fetch(cloudUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(repo)
-      });
-      if (putRes.ok) {
-        cloudSaved = true;
-        updateCloudBtnStatus(true);
+        const putRes = await fetch(cloudUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(repo)
+        });
+        if (putRes.ok) {
+          cloudSaved = true;
+          updateCloudBtnStatus(true);
+        }
       }
     } catch (err) {
       console.warn("Cloud sync error during save:", err);
@@ -2737,7 +2770,7 @@ async function saveCurrentPaperToRepository() {
   }
 
   if (cloudSaved) {
-    showToast(`✓ Saved to Cloud Database & Folder: [${currentClass}] ➔ [${currentSubject}]!`);
+    showToast(`✓ Saved to Google Cloud Sheet & Folder: [${currentClass}] ➔ [${currentSubject}]!`);
   } else {
     showToast(`✓ Saved locally in folder: [${currentClass}] ➔ [${currentSubject}]`);
   }
