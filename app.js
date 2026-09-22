@@ -2469,26 +2469,12 @@ function getCloudDbUrl() {
   return url;
 }
 
-function mergeRepositories(localRepo, cloudRepo) {
-  if (!cloudRepo || typeof cloudRepo !== "object") return localRepo || {};
-  const merged = JSON.parse(JSON.stringify(localRepo || {}));
-  
-  Object.keys(cloudRepo).forEach(cls => {
-    if (!merged[cls]) merged[cls] = [];
-    const cloudPapers = Array.isArray(cloudRepo[cls]) ? cloudRepo[cls] : [];
-    
-    cloudPapers.forEach(cp => {
-      if (!cp || typeof cp !== "object") return;
-      const idx = merged[cls].findIndex(p => p.id === cp.id || (p.subject && cp.subject && p.subject.toLowerCase() === cp.subject.toLowerCase()));
-      if (idx >= 0) {
-        merged[cls][idx] = cp;
-      } else {
-        merged[cls].push(cp);
-      }
-    });
+function formatCloudToRepository(cloudData) {
+  const repo = {};
+  ALL_CLASSES.forEach(cls => {
+    repo[cls] = (cloudData && Array.isArray(cloudData[cls])) ? cloudData[cls] : [];
   });
-
-  return merged;
+  return repo;
 }
 
 function initRepository() {
@@ -2501,16 +2487,15 @@ function initRepository() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
   }
 
-  // Automatic Cloud Sync on Startup from Google Sheets / Cloud DB (No Cache)
+  // Automatic Cloud Sync on Startup from Google Sheets (No Cache)
   const cloudUrl = getCloudDbUrl();
   if (cloudUrl && navigator.onLine) {
     fetch(cloudUrl, { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
-        if (data && typeof data === "object" && Object.keys(data).length > 0) {
-          const currentLocal = getRepositoryData();
-          const merged = mergeRepositories(currentLocal, data);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        if (data && typeof data === "object") {
+          const synced = formatCloudToRepository(data);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
           updatePortalBadgeCount();
           updateCloudBtnStatus(true);
         }
@@ -2533,22 +2518,6 @@ function saveRepositoryData(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     updatePortalBadgeCount();
-
-    // Auto sync to cloud in background if URL configured
-    const cloudUrl = getCloudDbUrl();
-    if (cloudUrl && navigator.onLine) {
-      if (cloudUrl.includes("firebaseio.com")) {
-        fetch(cloudUrl, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        })
-        .then(res => {
-          if (res.ok) updateCloudBtnStatus(true);
-        })
-        .catch(e => console.warn("Background cloud sync offline:", e));
-      }
-    }
   } catch (e) {
     console.error("Failed to save exam repository:", e);
   }
@@ -2571,7 +2540,7 @@ async function pushToCloudDatabase() {
   const input = document.getElementById("cloudDbUrlInput");
   let url = (input ? input.value : "").trim();
   if (!url) {
-    showToast("Please enter a Cloud Database URL (e.g. Google Apps Script Web App URL or Firebase URL).");
+    showToast("Please enter a Cloud Database URL.");
     return;
   }
   if (url.includes("firebaseio.com") && !url.endsWith(".json")) {
@@ -2582,9 +2551,8 @@ async function pushToCloudDatabase() {
   const repo = getRepositoryData();
 
   try {
-    showToast("☁️ Syncing papers to Cloud Database...");
+    showToast("☁️ Syncing papers to Google Sheets Cloud...");
     if (url.includes("script.google.com")) {
-      // Push each class paper to Google Sheet
       const classes = Object.keys(repo);
       for (const cls of classes) {
         const papers = repo[cls] || [];
@@ -2608,13 +2576,11 @@ async function pushToCloudDatabase() {
         updateCloudBtnStatus(true);
         closeCloudSyncModal();
         showToast("✓ All Exam Papers successfully backed up to Cloud Database!");
-      } else {
-        showToast("Cloud Error: " + res.statusText);
       }
     }
   } catch (err) {
     console.error("Cloud push failed:", err);
-    showToast("Failed to connect to Cloud Database. Check URL or internet.");
+    showToast("Failed to connect to Cloud Database.");
   }
 }
 
@@ -2625,17 +2591,16 @@ async function pullFromCloudDatabase() {
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === "object") {
-        const currentLocal = getRepositoryData();
-        const merged = mergeRepositories(currentLocal, data);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        const synced = formatCloudToRepository(data);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
         updatePortalBadgeCount();
         updateCloudBtnStatus(true);
         if (currentActivePortalClass) renderClassFolderView(currentActivePortalClass);
         else renderPortalRootFolders();
         closeCloudSyncModal();
         let totalCount = 0;
-        Object.values(merged).forEach(arr => { if (Array.isArray(arr)) totalCount += arr.length; });
-        showToast(`✓ Synced ${totalCount} exam papers from Cloud Database!`);
+        Object.values(synced).forEach(arr => { if (Array.isArray(arr)) totalCount += arr.length; });
+        showToast(`✓ Synced ${totalCount} exam papers from Google Sheet!`);
       }
     } else {
       showToast("Cloud Pull Error: " + res.statusText);
