@@ -1,0 +1,573 @@
+/* ==========================================================================
+   Chenab College Shorkot - Exam Composer Pro Stylesheet
+   Authentic Jameel Noori Nastaleeq, Class-Wise Dynamic Sizing & Full RTL
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=MedievalSharp&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Playfair+Display:wght@700;900&family=UnifrakturMaguntia&family=UnifrakturCook:wght@700&display=swap');
+
+/* Authentic Jameel Noori Nastaleeq Webfont */
+@font-face {
+  font-family: 'Jameel Noori Nastaleeq';
+  src: local('Jameel Noori Nastaleeq'),
+       local('Jameel Noori Nastaleeq Regular'),
+       local('Jameel Noori Nastaleeq Kasheeda'),
+       url('https://cdn.jsdelivr.net/gh/Pakistani-Urdu-Fonts/Jameel-Noori-Nastaleeq@main/Jameel%20Noori%20Nastaleeq.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/Pakistani-Urdu-Fonts/Jameel-Noori-Nastaleeq@main/Jameel%20Noori%20Nastaleeq.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --primary-color: #1e3a8a;
+  --paper-font-size: 12.5pt;
+  --paper-line-height: 1.45;
+  --paper-margin: 10mm;
+  --paper-heading-size: 12pt;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography Classes */
+.font-old-english-prestigious {
+  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+  letter-spacing: 2px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.font-gothic-classic {
+  font-family: 'UnifrakturMaguntia', 'UnifrakturCook', cursive, serif;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.font-oxford-serif {
+  font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  letter-spacing: 2.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Urdu Typography */
+.font-jameel-nastaliq {
+  font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Urdu Typesetting', serif !important;
+  line-height: 2.3 !important;
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.font-nastaliq-center {
+  font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Urdu Typesetting', serif !important;
+  line-height: 2.3 !important;
+  text-align: center !important;
+  direction: rtl !important;
+}
+
+.font-arabic {
+  font-family: 'Amiri', 'Traditional Arabic', serif !important;
+  line-height: 2.1 !important;
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* Paper Sheet Layout (Screen Preview) */
+.paper-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  padding: var(--paper-margin);
+  background: white;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+  color: #111827;
+  font-size: var(--paper-font-size);
+  line-height: var(--paper-line-height);
+  position: relative;
+  box-sizing: border-box;
+  margin: 0 auto;
+  border: 1.5px solid #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: font-size 0.15s ease, line-height 0.15s ease;
+}
+
+.paper-sheet .paper-content-grid {
+  flex: 1 1 auto;
+}
+
+/* Border Variations */
+.paper-sheet.border-none { border: none !important; }
+.paper-sheet.border-single { border: 1.5px solid #000 !important; }
+.paper-sheet.border-double { border: 4px double #000 !important; }
+.paper-sheet.border-formal { border: 2px solid #000 !important; outline: 1px solid #000 !important; outline-offset: 3px !important; }
+
+/* Urdu Paper Mode */
+.paper-sheet.urdu-mode {
+  direction: rtl !important;
+  text-align: right !important;
+  font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Urdu Typesetting', serif !important;
+}
+
+.paper-sheet.compact-mode {
+  --paper-line-height: 1.3 !important;
+  --paper-margin: 7.5mm;
+}
+
+.paper-sheet.two-column-mode .paper-content-grid {
+  column-count: 2;
+  column-gap: 8mm;
+  column-rule: 1px dashed #cbd5e1;
+}
+
+/* Header Styles */
+.paper-header-classic {
+  border-bottom: 2px solid #000;
+  padding-bottom: 5px;
+  margin-bottom: 8px;
+  text-align: center !important;
+}
+
+.student-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin-top: 4px;
+}
+
+.student-info-table td {
+  padding: 3px 6px;
+  border: 1px solid #374151;
+}
+
+.student-info-table .label {
+  font-weight: bold;
+  background-color: #f1f5f9;
+  white-space: nowrap;
+}
+
+/* Section Titles */
+.section-title-bar {
+  font-size: var(--paper-heading-size);
+  font-weight: bold;
+  border-bottom: 2px solid #111827;
+  padding-bottom: 2px;
+  margin-bottom: 8px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* MCQs Formatting */
+.mcq-item {
+  margin-bottom: 8px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  font-size: var(--paper-font-size);
+}
+
+.mcq-options-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px 8px;
+  margin-top: 2px;
+  font-size: calc(var(--paper-font-size) - 1pt);
+}
+
+.mcq-options-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px 8px;
+  margin-top: 2px;
+  font-size: calc(var(--paper-font-size) - 1pt);
+}
+
+.mcq-option-label {
+  font-weight: 700;
+  display: inline-block;
+  margin-left: 3px;
+  margin-right: 3px;
+}
+
+/* Worksheet Answer Spaces */
+.answer-line-standard {
+  width: 100%;
+  height: 22px;
+  border-bottom: 1px solid #9ca3af;
+  margin-top: 3px;
+}
+
+.answer-line-standard.urdu-line {
+  height: 28px;
+  border-bottom: 1px dashed #6b7280;
+  margin-top: 4px;
+}
+
+.answer-box-space {
+  width: 100%;
+  min-height: 55px;
+  border: 1.5px dashed #94a3b8;
+  border-radius: 4px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  background: #fafafc;
+}
+
+.handwriting-four-lines {
+  height: 28px;
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  background-image: 
+    linear-gradient(to bottom, #ef4444 1px, transparent 1px),
+    linear-gradient(to bottom, #3b82f6 1px, transparent 1px),
+    linear-gradient(to bottom, #3b82f6 1px, transparent 1px),
+    linear-gradient(to bottom, #ef4444 1px, transparent 1px);
+  background-size: 100% 9px;
+  background-repeat: repeat-y;
+  border-top: 1px solid #ef4444;
+  border-bottom: 1px solid #ef4444;
+}
+
+.tracing-text {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  letter-spacing: 7px;
+  color: #94a3b8;
+  text-decoration: underline dotted #64748b;
+  font-size: 22pt;
+}
+
+/* Clean Borderless 2-Column Matching Table (Kids Draw Connecting Lines) */
+.matching-clean-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  font-size: var(--paper-font-size);
+  border: none !important;
+}
+
+.matching-clean-table th {
+  padding: 4px 10px;
+  font-weight: bold;
+  font-size: calc(var(--paper-font-size) + 0.5pt);
+  border-bottom: 1.5px solid #111827 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  background: transparent !important;
+}
+
+.matching-clean-table td {
+  padding: 7px 10px;
+  border: none !important;
+  vertical-align: middle;
+  line-height: var(--paper-line-height);
+}
+
+.matching-clean-table .col-spacer {
+  width: 20%;
+  border: none !important;
+}
+
+.matching-clean-table .col-a-cell,
+.matching-clean-table .col-b-cell {
+  width: 40%;
+  font-weight: 500;
+}
+
+/* Formal Board Border Styles */
+.paper-sheet.border-none {
+  border: none !important;
+}
+
+.paper-sheet.border-single {
+  border: 1.5px solid #000 !important;
+}
+
+.paper-sheet.border-double {
+  border: 4px double #000 !important;
+}
+
+.paper-sheet.border-formal {
+  border: 2px solid #000 !important;
+  outline: 1.5px solid #000 !important;
+  outline-offset: -5px !important;
+}
+
+/* Watermark Styles */
+.paper-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140mm;
+  height: 140mm;
+  background-image: url('chenab_logo.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* Question Diagram / Image Formatting */
+.question-diagram-container {
+  margin: 5px 0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+.question-diagram-img {
+  max-height: 140px;
+  max-width: 90%;
+  object-fit: contain;
+  margin: 0 auto;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  padding: 2px;
+  background: #ffffff;
+}
+
+.question-thumb-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin-top: 4px;
+}
+
+/* ================= LIVE FLOATING URDU HINT / SUGGESTION BAR ================= */
+#urduLiveHintPopup {
+  position: fixed;
+  z-index: 99999;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1.5px solid rgba(59, 130, 246, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.3);
+  padding: 5px 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  pointer-events: auto;
+  transition: opacity 0.1s ease;
+}
+
+#urduLiveHintPopup.hidden {
+  display: none !important;
+}
+
+.urdu-hint-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.urdu-hint-chip.primary {
+  background: rgba(37, 99, 235, 0.4);
+  border-color: rgba(96, 165, 250, 0.85);
+  color: #bfdbfe;
+  font-weight: 700;
+}
+
+.urdu-hint-chip:hover {
+  background: rgba(59, 130, 246, 0.7);
+  border-color: #93c5fd;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.urdu-hint-text {
+  font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', serif;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.urdu-hint-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #94a3b8;
+}
+
+/* ================= QUESTION DIAGRAM PREVIEWS & DISPLAY ================= */
+.question-thumb-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  border-radius: 0.75rem;
+  padding: 0.4rem 0.65rem;
+  margin-top: 0.4rem;
+  gap: 0.5rem;
+}
+
+.question-diagram-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 6px 0;
+  padding: 4px 0;
+}
+
+.question-diagram-img {
+  max-height: 140px;
+  max-width: 90%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ==========================================================================
+   STRICT PRINT RULES (FULL A4 OUTPUT PAPER ONLY - NO INTERFERENCE)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 6mm 6mm 6mm;
+  }
+
+  *, *:before, *:after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-sizing: border-box !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    font-size: var(--paper-font-size) !important;
+    -webkit-text-size-adjust: 100% !important;
+  }
+
+  /* Completely HIDE all UI elements (Navbar, Left Input Panel, Modals, Backdrops, Buttons, Toast) */
+  header,
+  nav,
+  #editorSidebar,
+  .no-print,
+  .sec-content-panel,
+  .sec-tab,
+  .modal-backdrop,
+  #adminPortalModal,
+  #adminAuthModal,
+  #cloudSyncModal,
+  #ocrCropperModal,
+  #answerKeyModal,
+  #mathStudioModal,
+  #toastNotification,
+  .toast,
+  input[type="file"],
+  button {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Reset main workspace layout for clean full-page print flow */
+  main {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #previewContainer {
+    display: block !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  #paperSheetScaleWrapper {
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .paper-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 282mm !important; /* Forces outer border to cover the complete A4 page */
+    box-shadow: none !important;
+    padding: 6mm 7mm !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+  }
+
+  .paper-sheet .paper-content-grid {
+    flex: 1 1 auto !important;
+  }
+
+  #paperFooter {
+    margin-top: auto !important;
+    padding-top: 6px !important;
+  }
+
+  .paper-sheet.border-none { border: none !important; }
+  .paper-sheet.border-single { border: 1.5px solid #000 !important; }
+  .paper-sheet.border-double { border: 4px double #000 !important; }
+  .paper-sheet.border-formal { border: 2px solid #000 !important; outline: 1px solid #000 !important; outline-offset: 3px !important; }
+
+  .keep-together,
+  .mcq-item,
+  .paper-section-block,
+  .student-info-table,
+  .matching-table {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

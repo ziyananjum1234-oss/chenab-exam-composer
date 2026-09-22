@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chenab College Shorkot - Exam Paper Generator</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- KaTeX for Math Equations -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Tesseract.js for OCR Photo Scanning -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- PWA Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="chenab_logo.png">
+  <meta name="theme-color" content="#0f172a">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="h-full flex flex-col text-slate-100 overflow-hidden font-sans select-none">
+
+  <!-- ================= TOP NAVBAR (NO PRINT) ================= -->
+  <header class="no-print bg-slate-900 border-b border-slate-800 px-3 md:px-4 py-2.5 flex items-center justify-between z-30 shrink-0 shadow-lg">
+    <!-- College Branding -->
+    <div class="flex items-center gap-3">
+      <img src="chenab_logo.png" class="w-9 h-9 object-contain bg-white rounded-full p-0.5 border border-slate-700 shadow" alt="Chenab College Logo">
+      <div>
+        <h1 class="text-sm md:text-base font-bold text-white flex items-center gap-2">
+          CHENAB COLLEGE SHORKOT <span class="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded-full border border-blue-500/30 font-semibold">Auto Paper Maker</span>
+        </h1>
+        <p class="text-[11px] text-slate-400">Playgroup to 12th Automated Exam & Worksheet Portal</p>
+      </div>
+    </div>
+
+    <!-- Actions Bar (Clean Dashboard) -->
+    <div class="flex items-center gap-2.5">
+      <!-- Save to Class Folder Button -->
+      <button onclick="saveCurrentPaperToRepository()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition transform active:scale-95" title="Save paper directly into this class folder">
+        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+        <span>Save Paper</span>
+      </button>
+
+      <!-- Admin Portal (Password Protected) Button -->
+      <button onclick="openAdminPortalModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-950/40 transition transform active:scale-95" title="Open Admin Paper Repository (Password Protected)">
+        <i data-lucide="folder-lock" class="w-3.5 h-3.5"></i>
+        <span>Admin Portal</span>
+        <span id="portalPaperCountBadge" class="bg-indigo-900 text-indigo-200 text-[10px] px-2 py-0.5 rounded-full font-extrabold ml-0.5">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKSPACE ================= -->
+  <main class="flex-1 flex overflow-hidden relative">
+    
+    <!-- LEFT PANEL: FOCUSED SINGLE-VIEW SECTION BUILDER (NO PRINT) -->
+    <div id="editorSidebar" class="no-print w-full md:w-[480px] lg:w-[530px] bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 h-full overflow-hidden">
+      
+      <!-- 1. PRIMARY SETUP: CLASS, SUBJECT & CLASS-WISE FONT SIZE -->
+      <div class="p-3 bg-slate-950 border-b border-slate-800 space-y-2.5 shrink-0">
+        <div class="grid grid-cols-2 gap-2">
+          <!-- Class Selector -->
+          <div>
+            <label class="block text-slate-400 text-[11px] font-semibold mb-1">1. Class / Grade (Auto-Sizing):</label>
+            <select id="classSelector" onchange="handleClassChange(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-100 font-bold text-xs focus:border-blue-500 focus:outline-none">
+              <option value="Playgroup">Playgroup (18pt Toddler)</option>
+              <option value="Nursery">Nursery (17pt KG)</option>
+              <option value="Prep/KG">Prep / KG (16pt)</option>
+              <option value="Class 1">Class 1 (15pt Primary)</option>
+              <option value="Class 2">Class 2 (14.5pt Primary)</option>
+              <option value="Class 3">Class 3 (14pt Primary)</option>
+              <option value="Class 4">Class 4 (13.5pt Middle)</option>
+              <option value="Class 5">Class 5 (13.5pt Middle)</option>
+              <option value="Class 6">Class 6 (13pt Middle)</option>
+              <option value="Class 7">Class 7 (13pt Middle)</option>
+              <option value="Class 8">Class 8 (13pt Middle)</option>
+              <option value="Class 9th" selected>Class 9th (12.5pt Matric-I)</option>
+              <option value="Class 10th">Class 10th (12.5pt Matric-II)</option>
+              <option value="Class 11th (1st Year)">Class 11th (12pt Inter-I)</option>
+              <option value="Class 12th (2nd Year)">Class 12th (12pt Inter-II)</option>
+            </select>
+          </div>
+
+          <!-- Subject Selector + Manual Option -->
+          <div>
+            <label class="block text-blue-400 text-[11px] font-bold mb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> 2. Subject (مضمون):</span>
+              <button onclick="toggleManualSubject()" class="text-[10px] text-slate-400 hover:text-blue-300 underline font-normal">Custom Type</button>
+            </label>
+            
+            <div id="subjectDropdownContainer">
+              <select id="subjectSelector" onchange="handleSubjectChange(this.value)" class="w-full bg-blue-950/40 border border-blue-500/50 rounded-xl p-2 text-blue-200 font-bold text-xs focus:border-blue-400 focus:outline-none">
+                <option value="English">English</option>
+                <option value="Urdu">Urdu (اردو لازمی / اختیاری)</option>
+                <option value="Mathematics">Mathematics (ریاضی)</option>
+                <option value="Islamiyat">Islamiyat (اسلامیات لازمی)</option>
+                <option value="General Science">General Science (جنرل سائنس)</option>
+                <option value="Social Studies">Social Studies (معاشرتی علوم)</option>
+                <option value="Pak Studies">Pak Studies (مطالعہ پاکستان)</option>
+                <option value="Physics">Physics (طبیعیات)</option>
+                <option value="Chemistry">Chemistry (کیمیا)</option>
+                <option value="Biology">Biology (حیاتیات)</option>
+                <option value="Computer Science">Computer Science (کمپیوٹر سائنس)</option>
+                <option value="General Knowledge">General Knowledge (GK)</option>
+                <option value="Kids Tracing">Playgroup / KG Tracing</option>
+              </select>
+            </div>
+
+            <div id="subjectManualInputContainer" class="hidden">
+              <div class="flex items-center gap-1">
+                <input type="text" id="manualSubjectInput" placeholder="Enter custom subject name..." oninput="handleManualSubjectInput(this.value)" class="flex-1 bg-slate-900 border border-blue-500 rounded-xl p-2 text-slate-100 font-bold text-xs">
+                <button onclick="toggleManualSubject()" class="p-2 bg-slate-800 rounded-xl text-slate-300 text-xs" title="Back to list"><i data-lucide="list" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meta Row (Title, Marks, Time) -->
+        <div class="grid grid-cols-4 gap-1.5 text-xs">
+          <div class="col-span-2">
+            <input type="text" id="examTitle" value="Monthly Assessment Test 2026" oninput="renderPaper()" placeholder="Exam Title" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-slate-200 text-xs">
+          </div>
+          <div>
+            <input type="number" id="totalMarks" value="25" oninput="handleTotalMarksInput(this.value)" placeholder="Marks" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-amber-400 font-bold text-xs" title="Total Marks (Type any custom marks: 20, 50, 75, 100 etc)">
+          </div>
+          <div>
+            <input type="text" id="timeAllowed" value="45 Minutes" oninput="renderPaper()" placeholder="Time" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-slate-200 text-xs" title="Time Allowed">
+          </div>
+        </div>
+
+        <!-- Font Size & Auto Breakdown Indicator -->
+        <div class="flex items-center justify-between pt-0.5 text-xs flex-wrap gap-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-slate-400 text-[11px]">Font:</span>
+            <div class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
+              <button onclick="adjustFontSize(-0.5)" class="px-2 py-0.5 hover:bg-slate-800 text-slate-300 font-bold">-</button>
+              <span id="fontSizeDisplayBadge" class="px-2 py-0.5 text-blue-400 font-bold text-xs bg-slate-950">12.5pt</span>
+              <button onclick="adjustFontSize(0.5)" class="px-2 py-0.5 hover:bg-slate-800 text-slate-300 font-bold">+</button>
+            </div>
+            <span id="classProfileBadge" class="text-[10px] text-slate-400 italic">(Matric Board Size)</span>
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <select id="borderStyleSelector" onchange="handleBorderStyleChange(this.value)" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 px-2 py-1 rounded-lg font-semibold text-[11px]" title="Paper Border Style">
+              <option value="double" selected>Border: Double</option>
+              <option value="single">Border: Single</option>
+              <option value="formal">Border: Formal Box</option>
+              <option value="none">Border: None</option>
+            </select>
+            <button onclick="toggleWatermark()" id="watermarkToggleBtn" class="bg-indigo-950/50 hover:bg-indigo-900/50 border border-indigo-500/40 text-indigo-300 px-2 py-1 rounded-lg font-bold flex items-center gap-1 text-[11px]" title="Toggle Chenab College background watermark">
+              <i data-lucide="shield" class="w-3 h-3 text-indigo-400"></i> Watermark: ON
+            </button>
+            <button onclick="togglePaperMode()" id="paperModeBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 px-2 py-1 rounded-lg font-semibold flex items-center gap-1 text-[11px]">
+              <i data-lucide="file-text" class="w-3 h-3 text-blue-400"></i> Question Paper
+            </button>
+            <button onclick="toggleFitToOnePage()" id="fitToOnePageBtn" class="bg-emerald-950/40 hover:bg-emerald-900/40 border border-emerald-500/40 text-emerald-400 px-2 py-1 rounded-lg font-bold flex items-center gap-1 text-[11px]">
+              <i data-lucide="minimize-2" class="w-3 h-3"></i> Fit 1-Page
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. HORIZONTAL SECTION SELECTOR (Sirf Woh Aaye Jis Pr Click Ho!) -->
+      <div class="bg-slate-950 border-b border-slate-800 px-2.5 py-2 flex items-center gap-1.5 overflow-x-auto shrink-0">
+        <button onclick="switchActiveSectionTab('tab_mcq')" id="secTab_tab_mcq" class="sec-tab active px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-blue-600 text-white shrink-0 shadow-sm transition">
+          <i data-lucide="check-square" class="w-3.5 h-3.5"></i> 1. MCQs (معروضی)
+        </button>
+        <button onclick="switchActiveSectionTab('tab_short')" id="secTab_tab_short" class="sec-tab px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-400"></i> 2. Short Qs (مختصر)
+        </button>
+        <button onclick="switchActiveSectionTab('tab_long')" id="secTab_tab_long" class="sec-tab px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition">
+          <i data-lucide="align-left" class="w-3.5 h-3.5 text-purple-400"></i> 3. Long Qs (تفصیلی)
+        </button>
+        <button onclick="switchActiveSectionTab('tab_blanks')" id="secTab_tab_blanks" class="sec-tab px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition">
+          <i data-lucide="minus" class="w-3.5 h-3.5 text-emerald-400"></i> 4. Blanks (خالی جگہ)
+        </button>
+        <button onclick="switchActiveSectionTab('tab_matching')" id="secTab_tab_matching" class="sec-tab px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition">
+          <i data-lucide="git-merge" class="w-3.5 h-3.5 text-cyan-400"></i> 5. Match (کالم)
+        </button>
+        <button onclick="switchActiveSectionTab('tab_tracing')" id="secTab_tab_tracing" class="sec-tab px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition">
+          <i data-lucide="pencil" class="w-3.5 h-3.5 text-pink-400"></i> 6. Kids Tracing
+        </button>
+      </div>
+
+      <!-- INLINE FAST INSERT BAR (Math & Arabic & Roman Urdu Transliteration) -->
+      <div class="px-3 py-1.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs shrink-0 flex-wrap gap-1.5">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button onclick="toggleRomanUrduMode()" id="romanUrduToggleBtn" class="px-2.5 py-1 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="Type in English (e.g. pakistan ka) and it will automatically convert to Jameel Nastaleeq Urdu!">
+            <i data-lucide="languages" class="w-3.5 h-3.5 text-emerald-400"></i> Easy Urdu: <span id="romanUrduStatusBadge" class="text-white bg-emerald-600 px-1.5 py-0.2 rounded font-bold text-[10px]">ON</span>
+          </button>
+
+          <button onclick="openMathStudioModal()" id="mathStudioBtn" class="px-2.5 py-1 rounded-xl bg-blue-950/70 hover:bg-blue-900 border border-blue-500/50 text-blue-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="Open Visual Math Formulas, Matrix Builder, and Geometry Studio">
+            <i data-lucide="calculator" class="w-3.5 h-3.5 text-blue-400"></i> 📐 Math Studio
+          </button>
+        </div>
+        <div class="flex items-center gap-1 overflow-x-auto">
+          <span class="text-slate-400 text-[10px] font-semibold flex items-center gap-1 mr-0.5">
+            <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i> Symbols:
+          </span>
+          <button onclick="insertAtCursor('ﷺ')" class="px-1.5 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-600 text-emerald-300 hover:text-white text-xs font-bold" title="Sallallahu Alayhi Wasallam">ﷺ</button>
+          <button onclick="insertAtCursor('ؓ')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold" title="Raziallahu Anhu">ؓ</button>
+          <button onclick="insertAtCursor('ؑ')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold" title="Alayhis Salam">ؑ</button>
+          <button onclick="insertAtCursor('؎')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold" title="Shair Symbol">؎</button>
+          <button onclick="insertAtCursor('؟')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold" title="Urdu Question Mark">؟</button>
+          <button onclick="insertAtCursor('،')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold" title="Urdu Comma">،</button>
+          <button onclick="insertAtCursor('۔')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold" title="Urdu Khatma">۔</button>
+          <button onclick="insertAtCursor('√')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">√</button>
+          <button onclick="insertAtCursor('²')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">x²</button>
+          <button onclick="insertAtCursor('±')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">±</button>
+          <button onclick="insertAtCursor('×')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">×</button>
+          <button onclick="insertAtCursor('÷')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">÷</button>
+          <button onclick="insertAtCursor('π')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">π</button>
+          <button onclick="insertAtCursor('\u064E')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-sm font-arabic font-bold" title="Zabar">َ</button>
+          <button onclick="insertAtCursor('\u0650')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-sm font-arabic font-bold" title="Zer">ِ</button>
+          <button onclick="insertAtCursor('\u064F')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-sm font-arabic font-bold" title="Pesh">ُ</button>
+          <button onclick="insertAtCursor('\u0651')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-sm font-arabic font-bold" title="Tashdeed">ّ</button>
+          <button onclick="insertAtCursor(' ﴿ ')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">﴿</button>
+          <button onclick="insertAtCursor(' ﴾ ')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-blue-600 text-slate-200 text-xs font-bold">﴾</button>
+        </div>
+      </div>
+
+      <!-- 3. SECTION EDITORS (ONLY 1 IS VISIBLE AT A TIME) -->
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3 text-xs">
+
+        <!-- ================= TAB 1: MCQs ================= -->
+        <div id="tab_mcq" class="sec-content-panel space-y-2.5">
+          <div class="flex items-center justify-between bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl shadow-sm">
+            <span class="font-bold text-slate-100 flex items-center gap-1.5" id="mcqLabelTitle">
+              <i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> Multiple Choice Questions (MCQs)
+            </span>
+            <button onclick="addSingleMCQ()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 text-xs transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add MCQ
+            </button>
+          </div>
+
+          <!-- Section Marks & Choice Auto-Divider Bar -->
+          <div class="bg-blue-950/40 border border-blue-500/30 p-2 rounded-xl flex items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <label class="text-blue-300 font-bold">Section Marks:</label>
+              <input type="number" id="secMarks_mcq" value="5" oninput="updateSectionMarks('mcqs', this.value)" class="w-14 bg-slate-900 border border-blue-500/50 rounded-lg p-1 text-amber-300 font-bold text-center text-xs">
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-slate-300 font-medium">Attempt:</label>
+              <input type="number" id="secAttempt_mcq" placeholder="All" oninput="updateSectionAttempt('mcqs', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded-lg p-1 text-emerald-400 font-bold text-center text-xs" title="Number of questions student must attempt">
+            </div>
+            <div id="secBadge_mcq" class="text-[10.5pt] font-bold text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-800/50">
+              Each: 1 Mark
+            </div>
+          </div>
+
+          <div id="mcqListContainer" class="space-y-2.5"></div>
+        </div>
+
+        <!-- ================= TAB 2: SHORT QUESTIONS ================= -->
+        <div id="tab_short" class="sec-content-panel hidden space-y-2.5">
+          <div class="flex items-center justify-between bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl shadow-sm">
+            <span class="font-bold text-slate-100 flex items-center gap-1.5" id="shortLabelTitle">
+              <i data-lucide="help-circle" class="w-4 h-4 text-amber-400"></i> Short Questions Section
+            </span>
+            <button onclick="addSingleShortQ()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 text-xs transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Question
+            </button>
+          </div>
+
+          <!-- Section Marks, Choice & Answer Lines Auto-Divider Bar -->
+          <div class="bg-amber-950/40 border border-amber-500/30 p-2 rounded-xl flex items-center justify-between gap-2 flex-wrap text-xs">
+            <div class="flex items-center gap-1.5">
+              <label class="text-amber-300 font-bold">Marks:</label>
+              <input type="number" id="secMarks_short" value="10" oninput="updateSectionMarks('shortQs', this.value)" class="w-12 bg-slate-900 border border-amber-500/50 rounded-lg p-1 text-amber-300 font-bold text-center text-xs">
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label class="text-slate-300 font-medium">Attempt:</label>
+              <input type="number" id="secAttempt_short" placeholder="All" oninput="updateSectionAttempt('shortQs', this.value)" class="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1 text-emerald-400 font-bold text-center text-xs" title="Attempt any X questions (Choice)">
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label class="text-slate-300 font-medium">Lines:</label>
+              <select id="secLines_short" onchange="updateSectionLines('shortQs', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-amber-300 font-bold text-xs" title="Blank answer lines per question">
+                <option value="0">None (0 Lines)</option>
+                <option value="1">1 Line</option>
+                <option value="2" selected>2 Lines (Standard)</option>
+                <option value="3">3 Lines</option>
+                <option value="4">4 Lines</option>
+                <option value="4lines_eng">4-Lines English</option>
+                <option value="box">Working Box</option>
+              </select>
+            </div>
+            <div id="secBadge_short" class="text-[10.5pt] font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded-lg border border-amber-800/50">
+              Each: 2 Marks
+            </div>
+          </div>
+
+          <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2.5">
+            <details class="cursor-pointer">
+              <summary class="text-slate-300 font-semibold text-xs flex items-center gap-1">
+                <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-emerald-400"></i> Fast WhatsApp / Word Paste (Add All at Once)
+              </summary>
+              <div class="pt-2 space-y-2">
+                <textarea id="bulkShortText" rows="3" placeholder="1. What is photosynthesis?&#10;2. Define velocity.&#10;3. State laws of reflection." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 text-xs"></textarea>
+                <button onclick="importBulkShort()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1 px-3 rounded-lg text-xs">Convert & Add All</button>
+              </div>
+            </details>
+          </div>
+
+          <div id="shortListContainer" class="space-y-2.5"></div>
+        </div>
+
+        <!-- ================= TAB 3: LONG QUESTIONS ================= -->
+        <div id="tab_long" class="sec-content-panel hidden space-y-2.5">
+          <div class="flex items-center justify-between bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl shadow-sm">
+            <span class="font-bold text-slate-100 flex items-center gap-1.5" id="longLabelTitle">
+              <i data-lucide="align-left" class="w-4 h-4 text-purple-400"></i> Long Questions & Essays
+            </span>
+            <button onclick="addSingleLongQ()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 text-xs transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Long Q
+            </button>
+          </div>
+
+          <!-- Section Marks, Choice & Answer Lines Auto-Divider Bar -->
+          <div class="bg-purple-950/40 border border-purple-500/30 p-2 rounded-xl flex items-center justify-between gap-2 flex-wrap text-xs">
+            <div class="flex items-center gap-1.5">
+              <label class="text-purple-300 font-bold">Marks:</label>
+              <input type="number" id="secMarks_long" value="10" oninput="updateSectionMarks('longQs', this.value)" class="w-12 bg-slate-900 border border-purple-500/50 rounded-lg p-1 text-amber-300 font-bold text-center text-xs">
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label class="text-slate-300 font-medium">Attempt:</label>
+              <input type="number" id="secAttempt_long" placeholder="All" oninput="updateSectionAttempt('longQs', this.value)" class="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1 text-emerald-400 font-bold text-center text-xs" title="Attempt any X long questions">
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label class="text-slate-300 font-medium">Lines:</label>
+              <select id="secLines_long" onchange="updateSectionLines('longQs', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-purple-300 font-bold text-xs" title="Blank answer lines per question">
+                <option value="0">None (0 Lines)</option>
+                <option value="3">3 Lines</option>
+                <option value="4" selected>4 Lines (Standard)</option>
+                <option value="5">5 Lines</option>
+                <option value="6">6 Lines</option>
+                <option value="8">8 Lines</option>
+                <option value="box">Working Box</option>
+              </select>
+            </div>
+            <div id="secBadge_long" class="text-[10.5pt] font-bold text-purple-300 bg-purple-950/60 px-2 py-0.5 rounded-lg border border-purple-800/50">
+              Each: 5 Marks
+            </div>
+          </div>
+
+          <div id="longListContainer" class="space-y-2.5"></div>
+        </div>
+
+        <!-- ================= TAB 4: FILL IN THE BLANKS ================= -->
+        <div id="tab_blanks" class="sec-content-panel hidden space-y-2.5">
+          <div class="flex items-center justify-between bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl shadow-sm">
+            <span class="font-bold text-slate-100 flex items-center gap-1.5">
+              <i data-lucide="minus" class="w-4 h-4 text-emerald-400"></i> Fill in the Blanks (خالی جگہ پُر کریں)
+            </span>
+            <button onclick="addSingleBlank()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 text-xs transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Blank
+            </button>
+          </div>
+
+          <!-- Section Marks Bar -->
+          <div class="bg-emerald-950/40 border border-emerald-500/30 p-2 rounded-xl flex items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <label class="text-emerald-300 font-bold">Section Marks:</label>
+              <input type="number" id="secMarks_blanks" value="5" oninput="updateSectionMarks('blanks', this.value)" class="w-14 bg-slate-900 border border-emerald-500/50 rounded-lg p-1 text-amber-300 font-bold text-center text-xs">
+            </div>
+            <div id="secBadge_blanks" class="text-[10.5pt] font-bold text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-800/50">
+              Each: 1 Mark
+            </div>
+          </div>
+
+          <div id="blanksListContainer" class="space-y-2.5"></div>
+        </div>
+
+        <!-- ================= TAB 5: MATCH THE COLUMNS ================= -->
+        <div id="tab_matching" class="sec-content-panel hidden space-y-2.5">
+          <div class="flex items-center justify-between bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl shadow-sm">
+            <span class="font-bold text-slate-100 flex items-center gap-1.5">
+              <i data-lucide="git-merge" class="w-4 h-4 text-cyan-400"></i> Match the Columns (کالم الف کو کالم ب سے ملائیں)
+            </span>
+            <button onclick="addMatchingRow()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 text-xs transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Row
+            </button>
+          </div>
+
+          <!-- Section Marks Bar -->
+          <div class="bg-cyan-950/40 border border-cyan-500/30 p-2 rounded-xl flex items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <label class="text-cyan-300 font-bold">Section Marks:</label>
+              <input type="number" id="secMarks_matching" value="5" oninput="updateSectionMarks('matching', this.value)" class="w-14 bg-slate-900 border border-cyan-500/50 rounded-lg p-1 text-amber-300 font-bold text-center text-xs">
+            </div>
+            <div id="secBadge_matching" class="text-[10.5pt] font-bold text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-800/50">
+              Each: 1 Mark
+            </div>
+          </div>
+
+          <div id="matchingListContainer" class="space-y-2.5"></div>
+        </div>
+
+        <!-- ================= TAB 6: KIDS TRACING ================= -->
+        <div id="tab_tracing" class="sec-content-panel hidden space-y-2.5">
+          <div class="flex items-center justify-between bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl shadow-sm">
+            <span class="font-bold text-slate-100 flex items-center gap-1.5">
+              <i data-lucide="pencil" class="w-4 h-4 text-pink-400"></i> Tracing Dots (نقطے ملا کر لکھیں)
+            </span>
+            <button onclick="addTracingRow()" class="bg-pink-600 hover:bg-pink-500 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 text-xs transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Tracing
+            </button>
+          </div>
+          <div id="tracingListContainer" class="space-y-2.5"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: LIVE A4 PRINT PREVIEW (OUTPUT SHEET) -->
+    <div id="previewContainer" class="flex-1 bg-slate-950 p-3 lg:p-6 overflow-y-auto flex flex-col items-center justify-start relative">
+      
+      <!-- Preview Toolbar (NO PRINT) -->
+      <div class="no-print w-full max-w-[210mm] flex items-center justify-between mb-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-300 shadow-md">
+        <div class="flex items-center gap-3">
+          <span class="font-bold text-slate-100 flex items-center gap-1.5">
+            <i data-lucide="eye" class="w-4 h-4 text-blue-400"></i> Live A4 Sheet Preview (Chenab College Shorkot)
+          </span>
+          <span id="pageEstimate" class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[11px]">
+            Estimated: 1 Page
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="adjustZoom(-0.1)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200" title="Zoom Out">
+            <i data-lucide="zoom-out" class="w-3.5 h-3.5"></i>
+          </button>
+          <span id="zoomLevelDisplay" class="font-mono text-xs w-10 text-center">100%</span>
+          <button onclick="adjustZoom(0.1)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200" title="Zoom In">
+            <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- THE PRINTABLE SHEET -->
+      <div id="paperSheetScaleWrapper" class="transition-transform duration-150 origin-top">
+        <div id="paperSheet" class="paper-sheet relative border-double">
+          <!-- Background Watermark -->
+          <div id="paperWatermark" class="paper-watermark"></div>
+
+          <!-- Dynamic Header -->
+          <div id="paperHeaderContainer" class="relative z-10"></div>
+
+          <!-- Student Info Table -->
+          <div id="paperStudentInfoBox" class="mb-3 relative z-10"></div>
+
+          <!-- Dynamic Questions Content -->
+          <div id="paperContent" class="paper-content-grid space-y-3 relative z-10"></div>
+
+          <!-- Footer -->
+          <div id="paperFooter" class="mt-8 pt-2.5 border-t border-slate-400 flex justify-between items-center text-[9.5pt] text-slate-700 italic relative z-10">
+            <div>Note: Cutting, overwriting and use of lead pencil is strictly not allowed.</div>
+            <div class="font-bold not-italic" id="footerCollegeTag">★ CHENAB COLLEGE SHORKOT ★</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= TOAST NOTIFICATION POPUP (NO PRINT) ================= -->
+  <div id="toastNotification" class="no-print fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900 border border-emerald-500/50 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-3 text-emerald-300 font-bold text-xs">
+      <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+      <span id="toastMessage">Paper saved successfully!</span>
+    </div>
+  </div>
+
+  <!-- ================= HIDDEN QUESTION DIAGRAM FILE INPUT ================= -->
+  <input type="file" id="questionImageUploader" accept="image/*" class="hidden no-print" onchange="handleQuestionImageSelected(event)">
+
+  <!-- ================= HIDDEN OCR FILE INPUT ================= -->
+  <input type="file" id="inlineOcrInput" accept="image/*" class="hidden no-print" onchange="processInlineOCR(event)">
+
+  <!-- ================= HIDDEN REPOSITORY BACKUP FILE INPUT ================= -->
+  <input type="file" id="backupFileInput" accept=".json" class="hidden no-print" onchange="importRepositoryFile(event)">
+
+  <!-- ================= ANSWER KEY MODAL ================= -->
+  <div id="answerKeyModal" class="modal-backdrop no-print fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-amber-500/20 text-amber-400"><i data-lucide="key" class="w-5 h-5"></i></div>
+          <h2 class="text-base font-bold text-white">Chenab College - Answer Key (حل شدہ کی)</h2>
+        </div>
+        <button onclick="closeAnswerKeyModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-5 flex-1 overflow-y-auto space-y-3 text-xs" id="answerKeyContent"></div>
+      <div class="p-4 border-t border-slate-800 flex justify-end gap-2 bg-slate-950">
+        <button onclick="closeAnswerKeyModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold">Close</button>
+        <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-amber-600 text-white font-bold">Print Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN PASSWORD AUTH MODAL ================= -->
+  <div id="adminAuthModal" class="modal-backdrop no-print fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="text-center space-y-2">
+        <div class="w-16 h-16 mx-auto bg-white rounded-full p-1 border-2 border-indigo-500 shadow-lg flex items-center justify-center">
+          <img src="chenab_logo.png" class="w-12 h-12 object-contain" alt="Chenab College Logo">
+        </div>
+        <h3 class="text-lg font-bold text-white flex items-center justify-center gap-2">
+          <i data-lucide="lock" class="w-5 h-5 text-indigo-400"></i> Admin Security Access
+        </h3>
+        <p class="text-xs text-slate-400">Chenab College Exam Paper Repository Portal</p>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Enter Admin Password:</label>
+          <div class="relative">
+            <input type="password" id="adminPasswordInput" placeholder="Enter password..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-100 font-mono text-sm focus:border-indigo-500 focus:outline-none" onkeydown="if(event.key === 'Enter') submitAdminPassword()">
+            <button type="button" onclick="toggleAdminPasswordVisibility()" class="absolute right-3 top-3 text-slate-500 hover:text-slate-300">
+              <i data-lucide="eye" id="togglePasswordIcon" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p id="adminAuthError" class="text-red-400 text-xs font-bold mt-1.5 hidden flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Invalid Password! Please enter valid password.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button onclick="closeAdminAuthModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl font-semibold text-xs transition">
+            Cancel
+          </button>
+          <button onclick="submitAdminPassword()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="unlock" class="w-3.5 h-3.5"></i> Unlock Portal
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN PORTAL & CLASS FOLDERS REPOSITORY MODAL ================= -->
+  <div id="adminPortalModal" class="modal-backdrop no-print fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden shadow-2xl">
+      
+      <!-- Portal Top Bar -->
+      <div class="p-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+            <i data-lucide="folder-lock" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              Chenab College Shorkot - Exam Paper Repository (ایڈمن پورٹل)
+              <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Admin Active</span>
+            </h2>
+            <p class="text-xs text-slate-400">Class-wise Auto Organized Exam Folders & Saved Subject Papers</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Cloud Sync -->
+          <button onclick="openCloudSyncModal()" id="cloudSyncBtn" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition" title="Cloud Database Sync">
+            <i data-lucide="cloud" class="w-3.5 h-3.5"></i>
+            <span id="cloudStatusBtnText">Cloud Sync</span>
+          </button>
+          <!-- Backup Export -->
+          <button onclick="exportRepositoryBackup()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition" title="Export all class papers backup">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline">Export Backup</span>
+          </button>
+          <!-- Backup Import -->
+          <button onclick="document.getElementById('backupFileInput').click()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition" title="Restore papers from backup">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline">Restore</span>
+          </button>
+          <!-- Lock/Logout -->
+          <button onclick="lockAdminPortal()" class="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition" title="Lock Admin Portal">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>Lock</span>
+          </button>
+          <!-- Close -->
+          <button onclick="closeAdminPortalModal()" class="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Breadcrumbs Bar -->
+      <div class="px-5 py-3 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <!-- Breadcrumbs Navigation -->
+        <div id="portalBreadcrumb" class="flex items-center gap-2 text-xs font-semibold text-slate-300">
+          <button onclick="renderPortalRootFolders()" class="flex items-center gap-1 text-blue-400 hover:text-blue-300">
+            <i data-lucide="home" class="w-3.5 h-3.5"></i> All Class Folders
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative w-full sm:w-64">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500"></i>
+          <input type="text" id="portalSearchInput" oninput="filterPortalContent(this.value)" placeholder="Search subject or class..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <!-- Portal Content Body (Folders or Papers) -->
+      <div id="portalMainContent" class="flex-1 overflow-y-auto p-5 space-y-4">
+        <!-- Dynamically Rendered by JS -->
+      </div>
+
+      <!-- Portal Footer -->
+      <div class="p-3.5 border-t border-slate-800 bg-slate-950 flex items-center justify-between text-xs text-slate-400 shrink-0">
+        <span id="portalStatsFooter">Total: 0 saved exam papers across all class folders</span>
+        <button onclick="closeAdminPortalModal()" class="px-4 py-1.5 rounded-xl bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 transition">Back to Editor</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= CLOUD DATABASE SYNC CONFIG MODAL ================= -->
+  <div id="cloudSyncModal" class="modal-backdrop no-print fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-blue-500/40 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+            <i data-lucide="cloud" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">☁️ Cloud Database Sync (آن لائن کلاؤڈ ڈیٹا بیس)</h3>
+            <p class="text-xs text-slate-400">Sync all exam papers across all mobile phones & PCs</p>
+          </div>
+        </div>
+        <button onclick="closeCloudSyncModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 pt-1">
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1.5">
+          <p class="font-semibold text-blue-300 flex items-center gap-1">
+            <i data-lucide="info" class="w-3.5 h-3.5"></i> How Cloud Sync Works:
+          </p>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            Enter your Google Firebase Realtime Database URL or free cloud endpoint. When enabled, every paper saved on mobile or PC will automatically sync across all teachers and college computers!
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Cloud Database URL (e.g. Firebase):</label>
+          <input type="text" id="cloudDbUrlInput" placeholder="https://your-project-default-rtdb.firebaseio.com" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:border-blue-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button onclick="pullFromCloudDatabase()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="download-cloud" class="w-4 h-4 text-blue-400"></i> Pull from Cloud
+          </button>
+          <button onclick="pushToCloudDatabase()" class="bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="upload-cloud" class="w-4 h-4"></i> Push & Save Cloud
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-Time Floating Urdu Word Hint / Suggestion Bar (Google Input Tools Style) -->
+  <div id="urduLiveHintPopup" class="hidden no-print">
+    <div id="urduHintChipsContainer" class="flex items-center gap-1.5">
+      <!-- Dynamically filled with suggestions -->
+    </div>
+  </div>
+
+  <!-- ================= MATH & SCIENCE STUDIO MODAL (NO PRINT) ================= -->
+  <div id="mathStudioModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-6 no-print">
+    <div class="bg-slate-900 border border-blue-500/40 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl shadow-blue-950/50 overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-4 py-3 bg-gradient-to-r from-blue-950/90 via-slate-900 to-indigo-950/90 border-b border-blue-500/30 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 bg-blue-600/30 border border-blue-400/50 rounded-xl text-blue-300">
+            <i data-lucide="calculator" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">
+              📐 Math & Science Composer Studio
+              <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.2 rounded-full border border-blue-500/30">Visual Palette</span>
+            </h2>
+            <p class="text-[11px] text-slate-400">1-Click Formulas, Matrices, Primary Math & Geometry Shapes</p>
+          </div>
+        </div>
+        <button onclick="closeMathStudioModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Studio Navigation Tabs -->
+      <div class="bg-slate-950 border-b border-slate-800 px-3 py-2 flex items-center gap-1.5 overflow-x-auto shrink-0">
+        <button onclick="switchMathStudioTab('math_tab_formulas')" id="mathStudioTab_formulas" class="math-studio-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5 transition shrink-0">
+          <i data-lucide="sigma" class="w-3.5 h-3.5"></i> 1. Formulas & Fractions
+        </button>
+        <button onclick="switchMathStudioTab('math_tab_matrix')" id="mathStudioTab_matrix" class="math-studio-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 transition shrink-0">
+          <i data-lucide="grid" class="w-3.5 h-3.5 text-indigo-400"></i> 2. Matrix Builder (کالب)
+        </button>
+        <button onclick="switchMathStudioTab('math_tab_primary')" id="mathStudioTab_primary" class="math-studio-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 transition shrink-0">
+          <i data-lucide="plus-square" class="w-3.5 h-3.5 text-emerald-400"></i> 3. Primary Column Math
+        </button>
+        <button onclick="switchMathStudioTab('math_tab_geometry')" id="mathStudioTab_geometry" class="math-studio-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 transition shrink-0">
+          <i data-lucide="shapes" class="w-3.5 h-3.5 text-pink-400"></i> 4. Geometry & Venn
+        </button>
+      </div>
+
+      <!-- Studio Tab Contents -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        
+        <!-- TAB 1: FORMULAS & FRACTIONS -->
+        <div id="mathStudioContent_formulas" class="space-y-3">
+          <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+            <h3 class="font-bold text-blue-300 mb-2 flex items-center gap-1.5">
+              <i data-lucide="divide" class="w-3.5 h-3.5 text-blue-400"></i> Fractions, Powers & Roots (کسر، طاقت و جزر)
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button onclick="insertFormulaTemplate('\\frac{a}{b}')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-sm">$$\frac{a}{b}$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Simple Fraction</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\frac{x+1}{x-1}')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-sm">$$\frac{x+1}{x-1}$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Algebraic Fraction</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\sqrt{x}')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-sm">$$\sqrt{x}$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Square Root</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\sqrt[3]{x}')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-sm">$$\sqrt[3]{x}$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Cube Root</span>
+              </button>
+              <button onclick="insertFormulaTemplate('x^2 + y^2 = r^2')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$x^2 + y^2 = r^2$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Circle / Power</span>
+              </button>
+              <button onclick="insertFormulaTemplate('x_1, x_2')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$x_1, x_2$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Subscript</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\log_{10}(x)')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$\log_{10}(x)$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Logarithm</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\sum_{i=1}^{n} x_i')" class="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$\sum_{i=1}^{n} x_i$$</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Summation</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quadratic & Algebra Equations -->
+          <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+            <h3 class="font-bold text-amber-300 mb-2 flex items-center gap-1.5">
+              <i data-lucide="variable" class="w-3.5 h-3.5 text-amber-400"></i> Standard Board Equations (الجبرا و دو درجی فارمولا)
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button onclick="insertFormulaTemplate('x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}')" class="p-2.5 bg-slate-900 hover:bg-amber-600 hover:text-white border border-slate-700 rounded-xl font-bold text-left transition">
+                <span class="block text-xs font-serif">$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$</span>
+                <span class="text-[10px] text-slate-400 block mt-1">Quadratic Formula (دو درجی فارمولا)</span>
+              </button>
+              <button onclick="insertFormulaTemplate('(a+b)^2 = a^2 + 2ab + b^2')" class="p-2.5 bg-slate-900 hover:bg-amber-600 hover:text-white border border-slate-700 rounded-xl font-bold text-left transition">
+                <span class="block text-xs font-serif">$$(a+b)^2 = a^2 + 2ab + b^2$$</span>
+                <span class="text-[10px] text-slate-400 block mt-1">Expansion Formula (مربع کا کلیہ)</span>
+              </button>
+              <button onclick="insertFormulaTemplate('a^2 - b^2 = (a-b)(a+b)')" class="p-2.5 bg-slate-900 hover:bg-amber-600 hover:text-white border border-slate-700 rounded-xl font-bold text-left transition">
+                <span class="block text-xs font-serif">$$a^2 - b^2 = (a-b)(a+b)$$</span>
+                <span class="text-[10px] text-slate-400 block mt-1">Difference of Squares</span>
+              </button>
+              <button onclick="insertFormulaTemplate('ax^2 + bx + c = 0')" class="p-2.5 bg-slate-900 hover:bg-amber-600 hover:text-white border border-slate-700 rounded-xl font-bold text-left transition">
+                <span class="block text-xs font-serif">$$ax^2 + bx + c = 0$$</span>
+                <span class="text-[10px] text-slate-400 block mt-1">Standard Quadratic Form</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Trigonometry & Calculus -->
+          <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+            <h3 class="font-bold text-purple-300 mb-2 flex items-center gap-1.5">
+              <i data-lucide="activity" class="w-3.5 h-3.5 text-purple-400"></i> Trigonometry & Calculus (مثلثات و انٹیگریشن)
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button onclick="insertFormulaTemplate('\\sin^2\\theta + \\cos^2\\theta = 1')" class="p-2 bg-slate-900 hover:bg-purple-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$\sin^2\theta + \cos^2\theta = 1$$</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}')" class="p-2 bg-slate-900 hover:bg-purple-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$\tan\theta = \frac{\sin\theta}{\cos\theta}$$</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\int_{a}^{b} f(x)dx')" class="p-2 bg-slate-900 hover:bg-purple-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$\int_{a}^{b} f(x)dx$$</span>
+              </button>
+              <button onclick="insertFormulaTemplate('\\frac{d}{dx}(x^n) = n x^{n-1}')" class="p-2 bg-slate-900 hover:bg-purple-600 hover:text-white border border-slate-700 rounded-xl font-bold text-center transition">
+                <span class="block text-xs">$$\frac{d}{dx}(x^n) = n x^{n-1}$$</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: VISUAL MATRIX BUILDER -->
+        <div id="mathStudioContent_matrix" class="hidden space-y-3">
+          <div class="bg-slate-950 p-4 rounded-xl border border-indigo-500/40 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <label class="font-bold text-indigo-300 flex items-center gap-1.5">
+                <i data-lucide="grid" class="w-4 h-4 text-indigo-400"></i> Select Matrix Dimensions (کالب کی قسم):
+              </label>
+              <div class="flex items-center gap-1.5">
+                <button onclick="setMatrixDimension(2, 2)" id="matBtn_2x2" class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold text-xs">2 × 2 (Square)</button>
+                <button onclick="setMatrixDimension(3, 3)" id="matBtn_3x3" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs">3 × 3</button>
+                <button onclick="setMatrixDimension(1, 2)" id="matBtn_1x2" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs">1 × 2 (Row)</button>
+                <button onclick="setMatrixDimension(2, 1)" id="matBtn_2x1" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs">2 × 1 (Col)</button>
+              </div>
+            </div>
+
+            <!-- Matrix Variable Name (e.g. A =) -->
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 text-xs font-semibold">Matrix Name:</span>
+              <input type="text" id="matrixNameInput" value="A" class="w-16 bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-center font-bold text-white text-xs">
+              <span class="text-slate-400 text-xs font-bold">=</span>
+            </div>
+
+            <!-- Interactive Matrix Inputs Grid -->
+            <div id="matrixGridContainer" class="flex justify-center p-4 bg-slate-900 rounded-xl border border-slate-800">
+              <!-- Dynamically Rendered Matrix Grid -->
+            </div>
+
+            <!-- Insert Action -->
+            <div class="flex items-center justify-between pt-2">
+              <span class="text-[11px] text-slate-400">Tip: Click Insert to put this matrix in the active question.</span>
+              <button onclick="insertCurrentMatrixToActiveInput()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-950/50 transition transform active:scale-95">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Insert Matrix to Question
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PRIMARY VERTICAL MATH BUILDER -->
+        <div id="mathStudioContent_primary" class="hidden space-y-3">
+          <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/40 space-y-3">
+            <h3 class="font-bold text-emerald-300 flex items-center gap-1.5">
+              <i data-lucide="plus-square" class="w-4 h-4 text-emerald-400"></i> Primary Vertical Math Column (چھوٹی کلاسز کا جمع، تفریق، ضرب)
+            </h3>
+            <p class="text-[11px] text-slate-400">Creates a clean vertical column problem with horizontal line and answer box.</p>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-slate-400 text-[11px] font-semibold mb-1">Top Number:</label>
+                <input type="text" id="primaryMathTop" value="584" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold text-xs text-right">
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[11px] font-semibold mb-1">Operator:</label>
+                <select id="primaryMathOp" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold text-xs">
+                  <option value="+">+ (Addition)</option>
+                  <option value="-">- (Subtraction)</option>
+                  <option value="×">× (Multiplication)</option>
+                  <option value="÷">÷ (Division)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[11px] font-semibold mb-1">Bottom Number:</label>
+                <input type="text" id="primaryMathBottom" value="231" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold text-xs text-right">
+              </div>
+            </div>
+
+            <!-- Action -->
+            <div class="flex items-center justify-between pt-2">
+              <span class="text-[11px] text-slate-400">Works across Class Playgroup to Class 5th.</span>
+              <button onclick="insertPrimaryVerticalMath()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-950/50 transition transform active:scale-95">
+                <i data-lucide="check" class="w-4 h-4"></i> Insert Column Math
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: GEOMETRY & VENN DIAGRAMS (CLASS 1 TO 12TH A TO Z SHAPES) -->
+        <div id="mathStudioContent_geometry" class="hidden space-y-3">
+          <div class="bg-slate-950 p-4 rounded-xl border border-pink-500/40 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 class="font-bold text-pink-300 flex items-center gap-1.5">
+                  <i data-lucide="shapes" class="w-4 h-4 text-pink-400"></i> A to Z Geometry & Math Shapes (Class 1 to 12th)
+                </h3>
+                <p class="text-[11px] text-slate-400">Click any shape below to attach the crisp vector diagram to the selected question.</p>
+              </div>
+
+              <!-- Target Question Selector & Quick Remove -->
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-400 text-xs font-semibold">Attach to:</span>
+                <select id="mathDiagramTargetSelect" class="bg-slate-900 border border-pink-500/50 rounded-lg px-2.5 py-1 text-pink-200 text-xs font-bold focus:outline-none">
+                  <!-- Dynamically populated with questions -->
+                </select>
+                <button type="button" onclick="removeDiagramFromSelectedTarget()" class="px-2.5 py-1 rounded-lg bg-red-600/30 hover:bg-red-600 text-red-300 hover:text-white font-bold text-xs flex items-center gap-1 transition" title="Remove diagram from selected question">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove
+                </button>
+              </div>
+            </div>
+
+            <!-- Category 1: 2D Plane Geometry & Triangles -->
+            <div class="space-y-1.5 pt-1">
+              <span class="text-xs font-bold text-blue-400 flex items-center gap-1">
+                <i data-lucide="triangle" class="w-3.5 h-3.5"></i> 1. 2D Shapes & Triangles (مثلثات، دائرہ و کثیر الاضلاع)
+              </span>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <!-- Right Triangle -->
+                <button onclick="attachPresetGeometryDiagram('right_triangle')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><polygon points="10,70 90,70 90,10" /><rect x="75" y="55" width="15" height="15" /></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Right Triangle (قائمۃ الزاویہ)</span>
+                </button>
+                <!-- Equilateral Triangle -->
+                <button onclick="attachPresetGeometryDiagram('equilateral_triangle')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><polygon points="50,15 15,70 85,70" /><text x="50" y="50" font-size="12" class="fill-slate-400 font-serif" text-anchor="middle">60°</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Equilateral (مساوی الاضلاع)</span>
+                </button>
+                <!-- Isosceles Triangle -->
+                <button onclick="attachPresetGeometryDiagram('isosceles_triangle')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><polygon points="50,10 20,70 80,70" /><line x1="33" y1="38" x2="37" y2="42" stroke="#60a5fa"/><line x1="63" y1="38" x2="67" y2="42" stroke="#60a5fa"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Isosceles (مساوی الساقین)</span>
+                </button>
+                <!-- Square -->
+                <button onclick="attachPresetGeometryDiagram('square_shape')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><rect x="25" y="15" width="50" height="50" /><text x="50" y="45" font-size="12" class="fill-slate-400 font-serif" text-anchor="middle">s</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Square (مربع)</span>
+                </button>
+                <!-- Rectangle -->
+                <button onclick="attachPresetGeometryDiagram('rectangle_shape')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><rect x="15" y="20" width="70" height="40" /><text x="50" y="45" font-size="12" class="fill-slate-400 font-serif" text-anchor="middle">l × w</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Rectangle (مستطیل)</span>
+                </button>
+                <!-- Parallelogram -->
+                <button onclick="attachPresetGeometryDiagram('parallelogram_shape')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><polygon points="25,20 85,20 75,60 15,60" /><line x1="25" y1="20" x2="25" y2="60" stroke-dasharray="2 2" stroke="#94a3b8"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Parallelogram (متوازی الاضلاع)</span>
+                </button>
+                <!-- Rhombus -->
+                <button onclick="attachPresetGeometryDiagram('rhombus_shape')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><polygon points="50,15 80,40 50,65 20,40" /><line x1="50" y1="15" x2="50" y2="65" stroke-dasharray="2 2" stroke="#94a3b8"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Rhombus (معین)</span>
+                </button>
+                <!-- Trapezium -->
+                <button onclick="attachPresetGeometryDiagram('trapezium_shape')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><polygon points="30,20 70,20 85,60 15,60" /></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Trapezium (ذوزنقہ)</span>
+                </button>
+                <!-- Circle & Radius -->
+                <button onclick="attachPresetGeometryDiagram('circle_radius')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><circle cx="50" cy="40" r="25" /><line x1="50" y1="40" x2="75" y2="40" stroke-dasharray="2 2" stroke="#60a5fa" /></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Circle & Radius (دائرہ)</span>
+                </button>
+                <!-- Circle with Tangent -->
+                <button onclick="attachPresetGeometryDiagram('circle_tangent')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><circle cx="50" cy="35" r="22" /><line x1="15" y1="57" x2="85" y2="57" stroke="#f43f5e" stroke-width="2.5"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Circle Tangent (مماس)</span>
+                </button>
+                <!-- Circle Sector -->
+                <button onclick="attachPresetGeometryDiagram('circle_sector')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><path d="M50,45 L80,45 A30,30 0 0,0 65,19 Z" fill="rgba(59,130,246,0.2)"/><text x="60" y="38" font-size="10" class="fill-slate-300 font-serif">θ</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Sector & Arc (قطعہ دائرہ)</span>
+                </button>
+                <!-- Angle & Protractor -->
+                <button onclick="attachPresetGeometryDiagram('angle_degrees')" class="p-2.5 bg-slate-900 hover:bg-blue-950/70 border border-slate-700 hover:border-blue-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-blue-400 fill-none stroke-[3]"><line x1="20" y1="60" x2="80" y2="60" /><line x1="20" y1="60" x2="65" y2="20" /><path d="M35,60 A15,15 0 0,0 30,50" fill="none" stroke="#f43f5e" stroke-width="2"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Angle (زاویہ θ)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Category 2: 3D Solid Geometry (Matric & Inter) -->
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+              <span class="text-xs font-bold text-amber-400 flex items-center gap-1">
+                <i data-lucide="box" class="w-3.5 h-3.5"></i> 2. 3D Solid Geometry (مکعب، استوانہ، مخروط و کرہ)
+              </span>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <!-- Cube -->
+                <button onclick="attachPresetGeometryDiagram('cube_3d')" class="p-2.5 bg-slate-900 hover:bg-amber-950/70 border border-slate-700 hover:border-amber-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-amber-400 fill-none stroke-[2.5]"><rect x="20" y="30" width="35" height="35"/><rect x="35" y="15" width="35" height="35"/><line x1="20" y1="30" x2="35" y2="15"/><line x1="55" y1="30" x2="70" y2="15"/><line x1="55" y1="65" x2="70" y2="50"/><line x1="20" y1="65" x2="35" y2="50"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Cube (مکعب)</span>
+                </button>
+                <!-- Cuboid -->
+                <button onclick="attachPresetGeometryDiagram('cuboid_3d')" class="p-2.5 bg-slate-900 hover:bg-amber-950/70 border border-slate-700 hover:border-amber-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-amber-400 fill-none stroke-[2.5]"><rect x="15" y="30" width="50" height="30"/><rect x="30" y="15" width="50" height="30"/><line x1="15" y1="30" x2="30" y2="15"/><line x1="65" y1="30" x2="80" y2="15"/><line x1="65" y1="60" x2="80" y2="45"/><line x1="15" y1="60" x2="30" y2="45"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Cuboid (مکعب نما)</span>
+                </button>
+                <!-- Cylinder -->
+                <button onclick="attachPresetGeometryDiagram('cylinder_3d')" class="p-2.5 bg-slate-900 hover:bg-amber-950/70 border border-slate-700 hover:border-amber-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-amber-400 fill-none stroke-[2.5]"><ellipse cx="50" cy="20" rx="25" ry="8"/><ellipse cx="50" cy="60" rx="25" ry="8"/><line x1="25" y1="20" x2="25" y2="60"/><line x1="75" y1="20" x2="75" y2="60"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Cylinder (استوانہ)</span>
+                </button>
+                <!-- Cone -->
+                <button onclick="attachPresetGeometryDiagram('cone_3d')" class="p-2.5 bg-slate-900 hover:bg-amber-950/70 border border-slate-700 hover:border-amber-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-amber-400 fill-none stroke-[2.5]"><ellipse cx="50" cy="62" rx="25" ry="8"/><line x1="50" y1="15" x2="25" y2="62"/><line x1="50" y1="15" x2="75" y2="62"/><line x1="50" y1="15" x2="50" y2="62" stroke-dasharray="2 2" stroke="#94a3b8"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Cone (مخروط)</span>
+                </button>
+                <!-- Sphere -->
+                <button onclick="attachPresetGeometryDiagram('sphere_3d')" class="p-2.5 bg-slate-900 hover:bg-amber-950/70 border border-slate-700 hover:border-amber-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-amber-400 fill-none stroke-[2.5]"><circle cx="50" cy="40" r="25"/><ellipse cx="50" cy="40" rx="25" ry="7" stroke-dasharray="3 3"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Sphere (کرہ)</span>
+                </button>
+                <!-- Hemisphere -->
+                <button onclick="attachPresetGeometryDiagram('hemisphere_3d')" class="p-2.5 bg-slate-900 hover:bg-amber-950/70 border border-slate-700 hover:border-amber-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-amber-400 fill-none stroke-[2.5]"><ellipse cx="50" cy="30" rx="25" ry="8"/><path d="M25,30 A25,25 0 0,0 75,30"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Hemisphere (نصف کرہ)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Category 3: Coordinate Graphs & Vectors (Class 9th to 12th) -->
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+              <span class="text-xs font-bold text-purple-400 flex items-center gap-1">
+                <i data-lucide="line-chart" class="w-3.5 h-3.5"></i> 3. Coordinate Graphs, Vectors & Sets (کارٹیشین گراف، ویکٹرز و سیٹس)
+              </span>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <!-- X-Y Plane -->
+                <button onclick="attachPresetGeometryDiagram('xy_plane')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-none stroke-[2.5]"><line x1="15" y1="40" x2="85" y2="40"/><line x1="50" y1="10" x2="50" y2="70"/><text x="82" y="35" font-size="10" class="fill-slate-300 font-bold">X</text><text x="55" y="18" font-size="10" class="fill-slate-300 font-bold">Y</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">X-Y Coordinate Axis</span>
+                </button>
+                <!-- Linear Graph -->
+                <button onclick="attachPresetGeometryDiagram('linear_graph')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-none stroke-[2.5]"><line x1="15" y1="40" x2="85" y2="40"/><line x1="50" y1="10" x2="50" y2="70"/><line x1="20" y1="65" x2="80" y2="15" stroke="#f43f5e" stroke-width="2.5"/><text x="65" y="28" font-size="9" class="fill-rose-400 font-mono">y=mx+c</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Linear Line (y=mx+c)</span>
+                </button>
+                <!-- Parabola Graph -->
+                <button onclick="attachPresetGeometryDiagram('parabola_graph')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-none stroke-[2]"><line x1="15" y1="55" x2="85" y2="55"/><line x1="50" y1="15" x2="50" y2="70"/><path d="M25,20 Q50,75 75,20" stroke="#38bdf8" stroke-width="2.5"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Parabola (y=ax²)</span>
+                </button>
+                <!-- 2D Vector -->
+                <button onclick="attachPresetGeometryDiagram('vector_2d')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-none stroke-[2]"><line x1="20" y1="60" x2="80" y2="60"/><line x1="20" y1="60" x2="20" y2="15"/><line x1="20" y1="60" x2="70" y2="25" stroke="#10b981" stroke-width="3"/><polygon points="70,25 60,26 65,33" class="fill-emerald-500 stroke-none"/><text x="45" y="35" font-size="11" class="fill-emerald-400 font-bold">A⃗</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">2D Vector (ویکٹر A⃗)</span>
+                </button>
+                <!-- 2-Set Venn Diagram -->
+                <button onclick="attachPresetGeometryDiagram('venn_2set')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-purple-500/20 stroke-[2.5]"><circle cx="40" cy="40" r="22" /><circle cx="60" cy="40" r="22" /><text x="35" y="42" font-size="10" class="fill-slate-200">A</text><text x="62" y="42" font-size="10" class="fill-slate-200">B</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Venn Diagram (A ∩ B)</span>
+                </button>
+                <!-- 3-Set Venn Diagram -->
+                <button onclick="attachPresetGeometryDiagram('venn_3set')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-purple-500/20 stroke-[2]"><circle cx="50" cy="30" r="18"/><circle cx="38" cy="50" r="18"/><circle cx="62" cy="50" r="18"/></svg>
+                  <span class="text-[11px] font-bold text-slate-200">3-Set Venn (A, B, C)</span>
+                </button>
+                <!-- Parallel Lines & Transversal -->
+                <button onclick="attachPresetGeometryDiagram('parallel_lines')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-none stroke-[2.5]"><line x1="10" y1="25" x2="90" y2="25" /><line x1="10" y1="55" x2="90" y2="55" /><line x1="25" y1="70" x2="75" y2="10" stroke="#f43f5e" /></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Parallel Lines (متوازی خطوط)</span>
+                </button>
+                <!-- Number Line -->
+                <button onclick="attachPresetGeometryDiagram('number_line')" class="p-2.5 bg-slate-900 hover:bg-purple-950/70 border border-slate-700 hover:border-purple-500 rounded-xl text-center transition flex flex-col items-center gap-1">
+                  <svg width="50" height="40" viewBox="0 0 100 80" class="stroke-purple-400 fill-none stroke-[2.5]"><line x1="10" y1="40" x2="90" y2="40"/><line x1="20" y1="35" x2="20" y2="45"/><line x1="35" y1="35" x2="35" y2="45"/><line x1="50" y1="32" x2="50" y2="48" stroke="#f43f5e"/><line x1="65" y1="35" x2="65" y2="45"/><line x1="80" y1="35" x2="80" y2="45"/><text x="47" y="60" font-size="10" class="fill-slate-300">0</text></svg>
+                  <span class="text-[11px] font-bold text-slate-200">Number Line (نمبر لائن)</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Studio Footer -->
+      <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 shrink-0">
+        <span>KaTeX Vector Engine Active</span>
+        <button onclick="closeMathStudioModal()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition">Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= INTERACTIVE OCR LINE & QUESTION CROPPER MODAL ================= -->
+  <div id="ocrCropperModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 no-print">
+    <div class="bg-slate-900 border border-blue-500/50 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Cropper Header -->
+      <div class="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 bg-blue-600/30 border border-blue-400/50 rounded-xl text-blue-300">
+            <i data-lucide="crop" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">
+              ✂️ Selective OCR Crop Scanner
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.2 rounded-full border border-emerald-500/30">Single Line / Question</span>
+            </h2>
+            <p class="text-[11px] text-slate-400">Drag the selection box over the specific line or question to scan.</p>
+          </div>
+        </div>
+        <button onclick="closeOcrCropperModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Cropper Image & Canvas Workspace -->
+      <div class="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-950/60 relative select-none" id="cropperWorkspace">
+        <div class="relative inline-block" id="cropperImageWrapper">
+          <img id="cropperSourceImg" src="" alt="Scan Source" class="max-h-[60vh] max-w-full rounded-lg border border-slate-700 shadow-md">
+          
+          <!-- Interactive Draggable Crop Overlay Box -->
+          <div id="ocrCropBox" class="absolute border-2 border-blue-400 bg-blue-500/20 rounded shadow-lg cursor-move flex items-center justify-between p-1">
+            <span class="bg-blue-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full shadow pointer-events-none">Scan Area</span>
+            <div id="ocrCropHandle" class="w-3.5 h-3.5 bg-blue-400 rounded-full cursor-nwse-resize shadow border border-white"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OCR Status Indicator (hidden by default) -->
+      <div id="ocrScanningStatus" class="hidden px-4 py-2 bg-blue-950/80 border-t border-blue-500/30 flex items-center justify-between text-xs text-blue-200">
+        <div class="flex items-center gap-2">
+          <i data-lucide="loader" class="w-4 h-4 animate-spin text-blue-400"></i>
+          <span id="ocrProgressText">Scanning selected line...</span>
+        </div>
+        <span class="text-[11px] text-blue-400 font-bold" id="ocrProgressPercent">Processing...</span>
+      </div>
+
+      <!-- Cropper Footer Actions -->
+      <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs shrink-0 flex-wrap gap-2">
+        <button onclick="scanFullImageOcr()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Scan Entire Page
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button onclick="closeOcrCropperModal()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">Cancel</button>
+          
+          <button onclick="executeCroppedOcrScan()" id="executeCropScanBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-md shadow-blue-950/50 transition transform active:scale-95">
+            <i data-lucide="scan-line" class="w-4 h-4"></i>
+            <span>🔍 Scan This Selection Only</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Hidden OCR and Question Image File Inputs -->
+  <input type="file" id="ocrImageUploader" accept="image/*" onchange="handleOcrFileSelection(event)" class="hidden">
+  <input type="file" id="questionImageUploader" accept="image/*" onchange="handleQuestionImageUpload(event)" class="hidden">
+
+  <script src="app.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
