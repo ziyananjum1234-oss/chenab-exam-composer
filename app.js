@@ -3114,16 +3114,36 @@ function printDirectlyFromRepository(classLevel, paperId) {
   }, 400);
 }
 
-// Delete Paper
-function deletePaperFromRepository(classLevel, paperId) {
+// Delete Paper Permanently from Local and Cloud Google Sheet
+async function deletePaperFromRepository(classLevel, paperId) {
   if (!confirm(`Are you sure you want to delete this paper from ${classLevel}?`)) return;
 
   const repo = getRepositoryData();
   if (repo[classLevel]) {
     repo[classLevel] = repo[classLevel].filter(p => p.id !== paperId);
-    saveRepositoryData(repo);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
+    updatePortalBadgeCount();
     renderClassFolderView(classLevel);
-    showToast(`🗑️ Paper deleted from ${classLevel}`);
+    showToast(`🗑️ Deleting paper from Cloud Sheet...`);
+
+    const cloudUrl = getCloudDbUrl();
+    if (cloudUrl && navigator.onLine) {
+      try {
+        if (cloudUrl.includes("script.google.com")) {
+          await fetch(cloudUrl, {
+            method: "POST",
+            body: JSON.stringify({
+              action: "delete",
+              id: paperId,
+              className: classLevel
+            })
+          });
+        }
+        showToast(`✓ Paper permanently deleted from Google Sheet & Folder!`);
+      } catch (err) {
+        console.warn("Cloud delete failed:", err);
+      }
+    }
   }
 }
 
