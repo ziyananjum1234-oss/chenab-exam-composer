@@ -2592,7 +2592,7 @@ async function pushToCloudDatabase() {
 
 async function pullFromCloudDatabase() {
   const input = document.getElementById("cloudDbUrlInput");
-  let url = (input ? input.value : "").trim() || localStorage.getItem(CLOUD_DB_KEY);
+  let url = (input ? input.value : "").trim() || getCloudDbUrl();
   if (!url) {
     showToast("Please enter a Cloud Database URL first.");
     return;
@@ -2602,25 +2602,29 @@ async function pullFromCloudDatabase() {
   }
 
   try {
-    showToast("☁️ Fetching exam papers from Cloud Database...");
-    const res = await fetch(url);
+    showToast("☁️ Fetching live exam papers from Cloud...");
+    const res = await fetch(url, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === "object") {
-        saveRepositoryData(data);
-        localStorage.setItem(CLOUD_DB_KEY, url);
+        const currentLocal = getRepositoryData();
+        const merged = mergeRepositories(currentLocal, data);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        updatePortalBadgeCount();
         updateCloudBtnStatus(true);
         if (currentActivePortalClass) renderClassFolderView(currentActivePortalClass);
         else renderPortalRootFolders();
         closeCloudSyncModal();
-        showToast("✓ Synced all exam papers from Cloud Database!");
+        let totalCount = 0;
+        Object.values(merged).forEach(arr => { if (Array.isArray(arr)) totalCount += arr.length; });
+        showToast(`✓ Synced ${totalCount} exam papers from Cloud Database!`);
       }
     } else {
       showToast("Cloud Pull Error: " + res.statusText);
     }
   } catch (err) {
     console.error("Cloud pull failed:", err);
-    showToast("Failed to fetch from Cloud Database.");
+    showToast("Failed to fetch from Cloud Database. Check internet.");
   }
 }
 
