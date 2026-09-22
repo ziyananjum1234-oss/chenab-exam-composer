@@ -2600,19 +2600,9 @@ async function pushToCloudDatabase() {
 }
 
 async function pullFromCloudDatabase() {
-  const input = document.getElementById("cloudDbUrlInput");
-  let url = (input ? input.value : "").trim() || getCloudDbUrl();
-  if (!url) {
-    showToast("Please enter a Cloud Database URL first.");
-    return;
-  }
-  if (!url.endsWith(".json")) {
-    url = url.replace(/\/+$/, "") + "/chenab_exam_repository.json";
-  }
-
+  const cloudUrl = getCloudDbUrl();
   try {
-    showToast("☁️ Fetching live exam papers from Cloud...");
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(cloudUrl, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === "object") {
@@ -2660,7 +2650,7 @@ function updatePortalBadgeCount() {
   if (footerStats) footerStats.textContent = `Total: ${count} saved exam papers across ${ALL_CLASSES.length} class folders`;
 }
 
-// Save Current Working Paper into Class Folder & Sync to Firebase
+// Save Current Working Paper into Class Folder & Directly Push to Firebase Cloud
 async function saveCurrentPaperToRepository() {
   // Capture latest values directly from DOM inputs
   const classSelect = document.getElementById("classSelector");
@@ -2683,22 +2673,6 @@ async function saveCurrentPaperToRepository() {
   let repo = getRepositoryData();
   const currentClass = paperData.exam.classLevel || "Class 9th";
   const currentSubject = paperData.exam.subject || "English";
-
-  // Pre-fetch latest from Firebase before saving to prevent overwrite
-  const cloudUrl = getCloudDbUrl();
-  if (cloudUrl && navigator.onLine) {
-    try {
-      const res = await fetch(cloudUrl, { cache: "no-store" });
-      if (res.ok) {
-        const cloudData = await res.json();
-        if (cloudData && typeof cloudData === "object") {
-          repo = mergeRepositories(repo, cloudData);
-        }
-      }
-    } catch (e) {
-      console.warn("Pre-save cloud check:", e);
-    }
-  }
 
   if (!repo[currentClass]) {
     repo[currentClass] = [];
@@ -2724,8 +2698,49 @@ async function saveCurrentPaperToRepository() {
     repo[currentClass].push(record);
   }
 
-  saveRepositoryData(repo);
-  showToast(`✓ Paper Saved to Cloud & Folder: [${currentClass}] ➔ [${currentSubject}]`);
+  // Save to LocalStorage immediately
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
+  updatePortalBadgeCount();
+
+  // Push to Firebase Cloud
+  const cloudUrl = getCloudDbUrl();
+  let cloudSaved = false;
+
+  if (cloudUrl && navigator.onLine) {
+    try {
+      // First merge latest from cloud
+      const getRes = await fetch(cloudUrl, { cache: "no-store" });
+      if (getRes.ok) {
+        const cloudData = await getRes.json();
+        if (cloudData && typeof cloudData === "object") {
+          repo = mergeRepositories(repo, cloudData);
+          const cIdx = repo[currentClass].findIndex(p => p.id === record.id);
+          if (cIdx >= 0) repo[currentClass][cIdx] = record;
+          else repo[currentClass].push(record);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
+        }
+      }
+
+      // Send PUT to Cloud
+      const putRes = await fetch(cloudUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(repo)
+      });
+      if (putRes.ok) {
+        cloudSaved = true;
+        updateCloudBtnStatus(true);
+      }
+    } catch (err) {
+      console.warn("Cloud sync error during save:", err);
+    }
+  }
+
+  if (cloudSaved) {
+    showToast(`✓ Saved to Cloud Database & Folder: [${currentClass}] ➔ [${currentSubject}]!`);
+  } else {
+    showToast(`✓ Saved locally in folder: [${currentClass}] ➔ [${currentSubject}]`);
+  }
 
   if (!document.getElementById("adminPortalModal").classList.contains("hidden")) {
     if (currentActivePortalClass === currentClass) {
@@ -2741,8 +2756,8 @@ const ADMIN_PASSWORD = "Admin@123";
 let isAdminAuthenticated = false;
 let pendingTargetClass = null;
 
-// Open Admin Portal (Checks Password First & Fetches Live Cloud Papers)
-function openAdminPortalModal(targetClass = null) {
+// Open Admin Portal (Checks Password First & Pulls Live Cloud Data)
+async function openAdminPortalModal(targetClass = null) {
   pendingTargetClass = targetClass;
 
   if (!isAdminAuthenticated) {
@@ -2767,24 +2782,8 @@ function openAdminPortalModal(targetClass = null) {
     renderPortalRootFolders();
   }
 
-  // Real-time live fetch from Firebase Cloud so Mobile gets latest papers instantly
-  const cloudUrl = getCloudDbUrl();
-  if (cloudUrl && navigator.onLine) {
-    fetch(cloudUrl, { cache: "no-store" })
-      .then(res => res.json())
-      .then(data => {
-        if (data && typeof data === "object" && Object.keys(data).length > 0) {
-          const currentLocal = getRepositoryData();
-          const merged = mergeRepositories(currentLocal, data);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          updatePortalBadgeCount();
-          updateCloudBtnStatus(true);
-          if (currentActivePortalClass) renderClassFolderView(currentActivePortalClass);
-          else renderPortalRootFolders();
-        }
-      })
-      .catch(e => console.warn("Portal live cloud pull:", e));
-  }
+  // Real-time live fetch from Firebase Cloud
+  await pullFromCloudDatabase();
 }
 
 function submitAdminPassword() {
