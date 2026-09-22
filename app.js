@@ -2460,18 +2460,25 @@ const DEFAULT_CLOUD_DB_URL = "https://chenab-college-shorkot-default-rtdb.fireba
 const CLOUD_DB_KEY = "chenab_cloud_db_url";
 
 function getCloudDbUrl() {
-  return localStorage.getItem(CLOUD_DB_KEY) || DEFAULT_CLOUD_DB_URL;
+  let url = localStorage.getItem(CLOUD_DB_KEY) || DEFAULT_CLOUD_DB_URL;
+  if (!url || !url.trim()) url = DEFAULT_CLOUD_DB_URL;
+  url = url.trim();
+  if (!url.endsWith(".json")) {
+    url = url.replace(/\/+$/, "") + "/chenab_exam_repository.json";
+  }
+  return url;
 }
 
 function mergeRepositories(localRepo, cloudRepo) {
   if (!cloudRepo || typeof cloudRepo !== "object") return localRepo || {};
-  const merged = { ...(localRepo || {}) };
+  const merged = JSON.parse(JSON.stringify(localRepo || {}));
   
-  ALL_CLASSES.forEach(cls => {
+  Object.keys(cloudRepo).forEach(cls => {
     if (!merged[cls]) merged[cls] = [];
     const cloudPapers = Array.isArray(cloudRepo[cls]) ? cloudRepo[cls] : [];
     
     cloudPapers.forEach(cp => {
+      if (!cp || typeof cp !== "object") return;
       const idx = merged[cls].findIndex(p => p.id === cp.id || (p.subject && cp.subject && p.subject.toLowerCase() === cp.subject.toLowerCase()));
       if (idx >= 0) {
         merged[cls][idx] = cp;
@@ -2535,7 +2542,9 @@ function saveRepositoryData(data) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       })
-      .then(() => updateCloudBtnStatus(true))
+      .then(res => {
+        if (res.ok) updateCloudBtnStatus(true);
+      })
       .catch(e => console.warn("Background cloud sync offline:", e));
     }
   } catch (e) {
