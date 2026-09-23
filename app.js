@@ -2469,38 +2469,13 @@ function getCloudDbUrl() {
   return url;
 }
 
-function syncWithCloud(cloudData) {
-  const local = getRepositoryData() || {};
-  const cloud = cloudData || {};
-  const merged = {};
-
+function formatCloudToRepository(cloudData) {
+  const repo = {};
   ALL_CLASSES.forEach(cls => {
-    merged[cls] = [];
-    const localList = Array.isArray(local[cls]) ? local[cls] : [];
-    const cloudList = (cloud && Array.isArray(cloud[cls])) ? cloud[cls] : [];
-
-    const map = new Map();
-
-    // 1. Cloud Papers (Source of truth for cloud items)
-    cloudList.forEach(p => {
-      if (p && p.id && p.paperData && !p.action) {
-        map.set(p.id, p);
-      }
-    });
-
-    // 2. Local Papers (Preserve freshly created local papers that are waiting to sync)
-    localList.forEach(p => {
-      if (p && p.id && p.paperData && !p.action) {
-        if (!map.has(p.id)) {
-          map.set(p.id, p);
-        }
-      }
-    });
-
-    merged[cls] = Array.from(map.values());
+    const list = (cloudData && Array.isArray(cloudData[cls])) ? cloudData[cls] : [];
+    repo[cls] = list.filter(p => p && typeof p === "object" && p.id && p.paperData && !p.action);
   });
-
-  return merged;
+  return repo;
 }
 
 function initRepository() {
@@ -2513,14 +2488,14 @@ function initRepository() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
   }
 
-  // Automatic Cloud Sync on Startup from Google Sheets (No Cache)
+  // Automatic Cloud Sync on Startup from Central Google Sheet (No Cache)
   const cloudUrl = getCloudDbUrl();
   if (cloudUrl && navigator.onLine) {
     fetch(cloudUrl, { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
         if (data && typeof data === "object") {
-          const synced = syncWithCloud(data);
+          const synced = formatCloudToRepository(data);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
           updatePortalBadgeCount();
           updateCloudBtnStatus(true);
@@ -2578,31 +2553,19 @@ async function pushToCloudDatabase() {
 
   try {
     showToast("☁️ Syncing papers to Google Sheets Cloud...");
-    if (url.includes("script.google.com")) {
-      const res = await fetch(url, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "sync_all",
-          repository: repo
-        })
-      });
-      if (res.ok) {
-        updateCloudBtnStatus(true);
-        closeCloudSyncModal();
-        showToast("✓ All Exam Papers successfully backed up to Google Sheets Cloud!");
-      }
-    } else {
-      const res = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(repo)
-      });
-      if (res.ok) {
-        updateCloudBtnStatus(true);
-        closeCloudSyncModal();
-        showToast("✓ All Exam Papers successfully backed up to Cloud Database!");
+    const classes = Object.keys(repo);
+    for (const cls of classes) {
+      const papers = repo[cls] || [];
+      for (const p of papers) {
+        await fetch(url, {
+          method: "POST",
+          body: JSON.stringify({ action: "save", className: cls, paper: p })
+        });
       }
     }
+    updateCloudBtnStatus(true);
+    closeCloudSyncModal();
+    showToast("✓ All Exam Papers successfully backed up to Google Sheets Cloud!");
   } catch (err) {
     console.error("Cloud push failed:", err);
     showToast("Failed to connect to Cloud Database.");
@@ -2616,7 +2579,7 @@ async function pullFromCloudDatabase() {
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === "object") {
-        const synced = syncWithCloud(data);
+        const synced = formatCloudToRepository(data);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
         updatePortalBadgeCount();
         updateCloudBtnStatus(true);
@@ -2625,7 +2588,7 @@ async function pullFromCloudDatabase() {
         closeCloudSyncModal();
         let totalCount = 0;
         Object.values(synced).forEach(arr => { if (Array.isArray(arr)) totalCount += arr.length; });
-        showToast(`✓ Synced ${totalCount} exam papers from Google Sheet!`);
+        showToast(`✓ Synced ${totalCount} exam papers from Central Cloud Sheet!`);
       }
     } else {
       showToast("Cloud Pull Error: " + res.statusText);
@@ -2711,25 +2674,23 @@ async function saveCurrentPaperToRepository() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
   updatePortalBadgeCount();
 
-  // Push to Cloud (Google Sheets or Firebase)
+  // Push to Cloud (Central Google Sheets)
   const cloudUrl = getCloudDbUrl();
   let cloudSaved = false;
 
   if (cloudUrl && navigator.onLine) {
     try {
-      if (cloudUrl.includes("script.google.com")) {
-        // Direct POST to Google Sheets Web App (Full Clean Sync)
-        const res = await fetch(cloudUrl, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "sync_all",
-            repository: repo
-          })
-        });
-        if (res.ok) {
-          cloudSaved = true;
-          updateCloudBtnStatus(true);
-        }
+      const res = await fetch(cloudUrl, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "save",
+          className: currentClass,
+          paper: record
+        })
+      });
+      if (res.ok) {
+        cloudSaved = true;
+        updateCloudBtnStatus(true);
       }
     } catch (err) {
       console.warn("Cloud sync error during save:", err);
@@ -2737,7 +2698,7 @@ async function saveCurrentPaperToRepository() {
   }
 
   if (cloudSaved) {
-    showToast(`✓ Saved to Google Cloud Sheet & Folder: [${currentClass}] ➔ [${currentSubject}]!`);
+    showToast(`✓ Saved to Central Cloud Sheet & Folder: [${currentClass}] ➔ [${currentSubject}]!`);
   } else {
     showToast(`✓ Saved locally in folder: [${currentClass}] ➔ [${currentSubject}]`);
   }
@@ -3081,9 +3042,9 @@ function printDirectlyFromRepository(classLevel, paperId) {
   }, 400);
 }
 
-// Delete Paper Permanently from Local and Cloud Google Sheet
+// Delete Paper Permanently from Local and Central Google Sheet
 async function deletePaperFromRepository(classLevel, paperId) {
-  if (!confirm(`Are you sure you want to delete this paper from ${classLevel}?`)) return;
+  if (!confirm(`Are you sure you want to delete this paper permanently?`)) return;
 
   const repo = getRepositoryData();
   if (repo[classLevel]) {
@@ -3091,21 +3052,19 @@ async function deletePaperFromRepository(classLevel, paperId) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
     updatePortalBadgeCount();
     renderClassFolderView(classLevel);
-    showToast(`🗑️ Deleting paper from Cloud Sheet...`);
+    showToast(`🗑️ Deleting paper permanently from Central Cloud Sheet...`);
 
     const cloudUrl = getCloudDbUrl();
     if (cloudUrl && navigator.onLine) {
       try {
-        if (cloudUrl.includes("script.google.com")) {
-          await fetch(cloudUrl, {
-            method: "POST",
-            body: JSON.stringify({
-              action: "sync_all",
-              repository: repo
-            })
-          });
-        }
-        showToast(`✓ Paper permanently deleted from Google Sheet & Folder!`);
+        await fetch(cloudUrl, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "delete",
+            id: paperId
+          })
+        });
+        showToast(`✓ Paper permanently deleted from Central Sheet & All Devices!`);
       } catch (err) {
         console.warn("Cloud delete failed:", err);
       }
