@@ -2456,7 +2456,7 @@ function triggerPrint() {
 // ==========================================================================
 
 const STORAGE_KEY = "CHENAB_EXAM_REPOSITORY";
-const DEFAULT_CLOUD_DB_URL = "https://script.google.com/macros/s/AKfycbxq8U2LlaSjYwWnlOvALkGHHEkQN127VmcAAvBtL1V63L6t0cCN466Xg_0FoXtrdq2jig/exec";
+const DEFAULT_CLOUD_DB_URL = "https://script.google.com/macros/s/AKfycbxrVEfCkX26Z2aeDDtGH-Da31-vRiGAXUB7oDEpL60AXrX7MedHme7ZnSQfzbCANt9H/exec";
 const CLOUD_DB_KEY = "chenab_cloud_db_url";
 
 function getCloudDbUrl() {
@@ -2472,7 +2472,8 @@ function getCloudDbUrl() {
 function formatCloudToRepository(cloudData) {
   const repo = {};
   ALL_CLASSES.forEach(cls => {
-    repo[cls] = (cloudData && Array.isArray(cloudData[cls])) ? cloudData[cls] : [];
+    const rawList = (cloudData && Array.isArray(cloudData[cls])) ? cloudData[cls] : [];
+    repo[cls] = rawList.filter(p => p && typeof p === "object" && p.id && p.paperData && !p.action);
   });
   return repo;
 }
@@ -2553,19 +2554,18 @@ async function pushToCloudDatabase() {
   try {
     showToast("☁️ Syncing papers to Google Sheets Cloud...");
     if (url.includes("script.google.com")) {
-      const classes = Object.keys(repo);
-      for (const cls of classes) {
-        const papers = repo[cls] || [];
-        for (const p of papers) {
-          await fetch(url, {
-            method: "POST",
-            body: JSON.stringify({ className: cls, paper: p })
-          });
-        }
+      const res = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "sync_all",
+          repository: repo
+        })
+      });
+      if (res.ok) {
+        updateCloudBtnStatus(true);
+        closeCloudSyncModal();
+        showToast("✓ All Exam Papers successfully backed up to Google Sheets Cloud!");
       }
-      updateCloudBtnStatus(true);
-      closeCloudSyncModal();
-      showToast("✓ All Exam Papers successfully backed up to Google Sheets Cloud!");
     } else {
       const res = await fetch(url, {
         method: "PUT",
@@ -2693,38 +2693,15 @@ async function saveCurrentPaperToRepository() {
   if (cloudUrl && navigator.onLine) {
     try {
       if (cloudUrl.includes("script.google.com")) {
-        // Direct POST to Google Sheets Web App
+        // Direct POST to Google Sheets Web App (Full Clean Sync)
         const res = await fetch(cloudUrl, {
           method: "POST",
           body: JSON.stringify({
-            className: currentClass,
-            paper: record
+            action: "sync_all",
+            repository: repo
           })
         });
         if (res.ok) {
-          cloudSaved = true;
-          updateCloudBtnStatus(true);
-        }
-      } else {
-        // Firebase Cloud Sync
-        const getRes = await fetch(cloudUrl, { cache: "no-store" });
-        if (getRes.ok) {
-          const cloudData = await getRes.json();
-          if (cloudData && typeof cloudData === "object") {
-            repo = mergeRepositories(repo, cloudData);
-            const cIdx = repo[currentClass].findIndex(p => p.id === record.id);
-            if (cIdx >= 0) repo[currentClass][cIdx] = record;
-            else repo[currentClass].push(record);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
-          }
-        }
-
-        const putRes = await fetch(cloudUrl, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(repo)
-        });
-        if (putRes.ok) {
           cloudSaved = true;
           updateCloudBtnStatus(true);
         }
@@ -3098,9 +3075,8 @@ async function deletePaperFromRepository(classLevel, paperId) {
           await fetch(cloudUrl, {
             method: "POST",
             body: JSON.stringify({
-              action: "delete",
-              id: paperId,
-              className: classLevel
+              action: "sync_all",
+              repository: repo
             })
           });
         }
