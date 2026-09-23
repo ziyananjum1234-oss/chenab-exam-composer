@@ -2469,13 +2469,38 @@ function getCloudDbUrl() {
   return url;
 }
 
-function formatCloudToRepository(cloudData) {
-  const repo = {};
+function syncWithCloud(cloudData) {
+  const local = getRepositoryData() || {};
+  const cloud = cloudData || {};
+  const merged = {};
+
   ALL_CLASSES.forEach(cls => {
-    const rawList = (cloudData && Array.isArray(cloudData[cls])) ? cloudData[cls] : [];
-    repo[cls] = rawList.filter(p => p && typeof p === "object" && p.id && p.paperData && !p.action);
+    merged[cls] = [];
+    const localList = Array.isArray(local[cls]) ? local[cls] : [];
+    const cloudList = (cloud && Array.isArray(cloud[cls])) ? cloud[cls] : [];
+
+    const map = new Map();
+
+    // 1. Cloud Papers (Source of truth for cloud items)
+    cloudList.forEach(p => {
+      if (p && p.id && p.paperData && !p.action) {
+        map.set(p.id, p);
+      }
+    });
+
+    // 2. Local Papers (Preserve freshly created local papers that are waiting to sync)
+    localList.forEach(p => {
+      if (p && p.id && p.paperData && !p.action) {
+        if (!map.has(p.id)) {
+          map.set(p.id, p);
+        }
+      }
+    });
+
+    merged[cls] = Array.from(map.values());
   });
-  return repo;
+
+  return merged;
 }
 
 function initRepository() {
@@ -2495,7 +2520,7 @@ function initRepository() {
       .then(res => res.json())
       .then(data => {
         if (data && typeof data === "object") {
-          const synced = formatCloudToRepository(data);
+          const synced = syncWithCloud(data);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
           updatePortalBadgeCount();
           updateCloudBtnStatus(true);
@@ -2591,7 +2616,7 @@ async function pullFromCloudDatabase() {
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === "object") {
-        const synced = formatCloudToRepository(data);
+        const synced = syncWithCloud(data);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
         updatePortalBadgeCount();
         updateCloudBtnStatus(true);
