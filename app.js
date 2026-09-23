@@ -2683,9 +2683,8 @@ async function saveCurrentPaperToRepository() {
       const res = await fetch(cloudUrl, {
         method: "POST",
         body: JSON.stringify({
-          action: "save",
-          className: currentClass,
-          paper: record
+          action: "sync_all",
+          repository: repo
         })
       });
       if (res.ok) {
@@ -3060,8 +3059,8 @@ async function deletePaperFromRepository(classLevel, paperId) {
         await fetch(cloudUrl, {
           method: "POST",
           body: JSON.stringify({
-            action: "delete",
-            id: paperId
+            action: "sync_all",
+            repository: repo
           })
         });
         showToast(`✓ Paper permanently deleted from Central Sheet & All Devices!`);
